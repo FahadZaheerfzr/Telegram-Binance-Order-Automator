@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # Setting configation values
 # Replace 'YOUR_API_KEY' and 'YOUR_API_SECRET' with your actual Binance API credentials
 config = ConfigParser()
-config.read('config.ini')
+config.read('default_config.ini')
 
 api_key = config.get('Telegram','API_ID')
 api_secret = config.get('Telegram','API_HASH')
@@ -43,7 +43,6 @@ def buy_callback(symbol):
 
 @client.on(events.NewMessage(chats=user_input_channel))
 async def newMessageListener(event):
-    print(Data.data)
     newMessage = event.message.message
     newMessage = newMessage.lower()
     symbol = newMessage.split("#")[1].split(" ")[0].upper()

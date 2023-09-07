@@ -2,3 +2,5 @@ telethon
 asyncio
 python-binance
 binance-futures-connector
+pyTelegramBotAPI
+python-dotenv
