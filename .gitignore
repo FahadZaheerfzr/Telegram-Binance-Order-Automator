@@ -4,3 +4,5 @@
 'fahadzaheer'.session
 config.ini
 *_config.ini
+
+.env
