@@ -4,6 +4,7 @@ import threading
 from configparser import ConfigParser
 import createTestOrder
 import asyncio
+from data import Data
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -42,10 +43,16 @@ def buy_callback(symbol):
 
 @client.on(events.NewMessage(chats=user_input_channel))
 async def newMessageListener(event):
+    print(Data.data)
     newMessage = event.message.message
     newMessage = newMessage.lower()
     symbol = newMessage.split("#")[1].split(" ")[0].upper()
     print(symbol)
+
+    if symbol in Data.data:
+        logger.info(f'Already recieved message for {symbol}')
+        return
+
     logger.info(f'Recieved new message : {newMessage}')
 
     if symbol in excluded_symbols:
