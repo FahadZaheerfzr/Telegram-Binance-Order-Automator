@@ -116,10 +116,10 @@ class Binance():
             if quantity > 1:
                 quantity = int(quantity) # if it is 1.14324 return 1
             else:
-                quantity = float(round(quantity,4)) # if it is 0.95435 return 0.954
+                quantity = float(round(quantity,3)) # if it is 0.95435 return 0.954
 
             stop_loss_percentage = self.configur.getfloat('Binance','STOP_PERCENTAGE')
-            stop_loss_price = round(current_price - ((stop_loss_percentage / 100) * current_price),2)
+            stop_loss_price = round(current_price - ((stop_loss_percentage / 100) * current_price),4)
 
             self.logger.info(f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
@@ -210,7 +210,7 @@ class Binance():
                 if sell_quantity > 1:
                     sell_quantity = int(sell_quantity)
                 else:
-                    sell_quantity = round(sell_quantity,4)
+                    sell_quantity = round(sell_quantity,3)
                 try:
                     sell_order = self.client.futures_create_order(
                         symbol=self.symbol,
@@ -276,10 +276,10 @@ class Binance():
             if quantity > 1:
                 quantity = int(quantity) # if it is 1.14324 return 1
             else:
-                quantity = float(round(quantity,4)) # if it is 0.95435 return 0.954
+                quantity = float(round(quantity,3)) # if it is 0.95435 return 0.954
 
             stop_loss_percentage = self.configur.getfloat('Binance','STOP_PERCENTAGE')
-            stop_loss_price = round(current_price + ((stop_loss_percentage / 100) * current_price),2)
+            stop_loss_price = round(current_price + ((stop_loss_percentage / 100) * current_price),4)
 
             self.logger.info(f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
@@ -371,7 +371,7 @@ class Binance():
                 if sell_quantity > 1:
                     sell_quantity = int(sell_quantity)
                 else:
-                    sell_quantity = round(sell_quantity,4)
+                    sell_quantity = round(sell_quantity,3)
                 try:
                     sell_order = self.client.futures_create_order(
                         symbol=self.symbol,
