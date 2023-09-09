@@ -6,3 +6,7 @@ config.ini
 *_config.ini
 
 .env
+
+changes.txt
+
+/data

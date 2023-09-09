@@ -5,9 +5,10 @@ from configparser import ConfigParser
 import createTestOrder
 import asyncio
 from data import Data
+from utils import setup_logger
+import price_socket
+logger = setup_logger("telegram-listener")
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 
 # Setting configation values
@@ -20,6 +21,12 @@ api_secret = config.get('Telegram','API_HASH')
 username = config.get('Telegram','USERNAME')
 user_input_channel = int(config.get('Telegram','TARGET_GROUP'))
 excluded_symbols = config.get('Binance','EXCLUDED_SYMBOLS').strip('][').split(',')
+
+WORDS_DICT = {
+    'buy': [['buy', 'setup'], ['long', 'setup'], ['buy', 'high', 'sell', 'higher']],
+    'sell': [['sell', 'short'], ['sell', 'setup'], ['short', 'setup'], ['sell', 'low', 'buy', 'lower']]
+}
+
 
 print(excluded_symbols)
 
@@ -43,10 +50,12 @@ def buy_callback(symbol):
 
 @client.on(events.NewMessage(chats=user_input_channel))
 async def newMessageListener(event):
-    newMessage = event.message.message
-    newMessage = newMessage.lower()
-    symbol = newMessage.split("#")[1].split(" ")[0].upper()
-    print(symbol)
+    try:
+        newMessage = event.message.message
+        newMessage = newMessage.lower()
+        symbol = newMessage.split("#")[1].split(" ")[0].upper()
+    except Exception as e:
+        return
 
     if symbol in Data.data:
         logger.info(f'Already recieved message for {symbol}')

@@ -1,27 +1,28 @@
+import time
 from binance.client import Client
 from configparser import ConfigParser
 from binance.um_futures import UMFutures
 from telethon import TelegramClient
 import telebot # pip install pyTelegramBotAPI
-from data import Data
-import logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
-logging.basicConfig(level=logging.ERROR, format='%(levelname)s - %(message)s')
+from data import Data, PriceData
 import dotenv
 import sys
-
-
+from utils import setup_logger
+from symbols import cryptocurrencies
 
 # Read a variable called CONFIG from dotenv
 # This variable will contain the path to the configuration file
 SYMBOLS = dotenv.dotenv_values()['SYMBOLS']
 
+time_logger = setup_logger("time-logger")
+
+
 class Binance():
 
     def __init__(self, symbol):
 
-        self.logger = logging.getLogger(__name__)
-        
+        self.logger = setup_logger("binance-order")
+        self.price_data = PriceData()
         try:
             # reading config file
             self.configur = ConfigParser()
@@ -58,13 +59,14 @@ class Binance():
         
 
     def set_leverage(self):
-        
+        time_start = time.time()
         try:
             leverage = int(self.configur.get('Binance','LEVERAGE'))
             # self.symbol = self.configur.get('Binance','SYMBOL')
             print(leverage)
             self.client.futures_change_leverage(symbol=self.symbol,leverage=leverage,recvWindow=60000)
-
+            time_end = time.time()
+            time_logger.info(f'TIME TAKEN TO SET LEVERAGE : {time_end-time_start}')
             self.logger.info(f'LEVERAGE SET TO : {leverage}')
         
         except Exception as e:
@@ -73,12 +75,13 @@ class Binance():
             sys.exit()
 
     def set_margintype(self):
-        
+        time_start = time.time()
         try:
             margin_type = self.configur.get('Binance','MARGIN_TYPE')
             # symbol = self.configur.get('Binance','SYMBOL')
             self.client.futures_change_margin_type(symbol=self.symbol,marginType=margin_type,recvWindow=60000)
-
+            time_end = time.time()
+            time_logger.info(f'TIME TAKEN TO SET MARGIN TYPE : {time_end-time_start}')
             self.logger.info(f'MARGIN TYPE SET TO : {margin_type}')
         
         except Exception as e:
@@ -97,12 +100,15 @@ class Binance():
         
         try:
             # setting desired margin type and leverage 
-            self.set_leverage()
+            #self.set_leverage()
             #self.set_margintype()            
+            time_start = time.time()
+            budget = self.configur.getfloat('Binance','USDT_BUDGET')
+            try:
+                current_price = self.price_data.price_data[cryptocurrencies.index(self.symbol)]          
+            except Exception as e:
+                current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
 
-            budget = self.configur.getint('Binance','USDT_BUDGET')
-
-            current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])                                                 
             self.logger.info(f'CURRENT PRICE OF {self.symbol} is {current_price}')
 
             quantity = budget/current_price
@@ -112,25 +118,42 @@ class Binance():
             else:
                 quantity = float(round(quantity,3)) # if it is 0.95435 return 0.954
 
+            stop_loss_percentage = self.configur.getfloat('Binance','STOP_PERCENTAGE')
+            stop_loss_price = round(current_price - ((stop_loss_percentage / 100) * current_price),2)
+
+            self.logger.info(f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
                 symbol=self.symbol,
                 side='BUY',
                 type='MARKET',
                 quantity=quantity,
-                recvWindow=60000
+                recvWindow=60000,     
             )
+            time_end = time.time()
+            time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_end-time_start}')
+
+            time_start = time.time()
+            stop_loss_order = self.client.futures_create_order(
+                symbol=self.symbol,
+                side='SELL',
+                type='STOP_MARKET',
+                quantity=quantity,
+                stopPrice=stop_loss_price,
+                recvWindow=60000,
+                reduceOnly=True,
+            )
+            time_end = time.time()
+            time_logger.info(f'TIME TAKEN TO PLACE STOP LOSS ORDER : {time_end-time_start}')
             
             self.data.add(self.symbol)
 
             # Check the response
             if order:
-                self.logger.info(f'ORDER PLACED : {order["orderId"]}')            
-
                 order_details = self.client.futures_get_order(symbol=self.symbol,orderId=order['orderId'],recvWindow=60000)
                 entry_price = float(order_details['avgPrice'])
 
-                stop_loss_percentage = self.configur.getint('Binance','STOP_PERCENTAGE')
-                stop_loss_price = entry_price - ((stop_loss_percentage / 100) * entry_price)
+                self.logger.info(f'ORDER PLACED : {order["orderId"]} at {entry_price}')     
+                self.logger.info(f'STOP LOSS ORDER PLACED : {stop_loss_order["orderId"]} at {stop_loss_price}')
 
                 # getting trade data ready
                 exit_points = self.configur.getint('Binance','NUMBER_OF_EXIT_POINTS')
@@ -144,7 +167,7 @@ class Binance():
                 exit_target_percentages_list = [] # store percentages
 
                 for i in range(1, exit_points+1):                   
-                    exit_target_percentages_list.append(self.configur.getint('Binance',f'EXIT_{i}_TARGET_PRICE'))
+                    exit_target_percentages_list.append(self.configur.getfloat('Binance',f'EXIT_{i}_TARGET_PRICE'))
 
                 exit_prices = []    # store target prices
                 # convert percentages into prices
@@ -159,13 +182,22 @@ class Binance():
 
         alert_bot = telebot.TeleBot(self.bot_token, parse_mode=None)
         alert_bot.send_message(self.user, f'BUY ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {entry_price}.\nSTOP LOSS PRICE : {stop_loss_price}\nEXIT POINTS : {exit_prices}')
-
+        alert_bot.send_message(self.user, f'STOP LOSS ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {stop_loss_price}.')
 
         current_index = 0   # index for iterating through loop
         
         # Monitor the price of the token        
         while True:
+            positions = next(obj for obj in self.client.futures_account()['positions'] if obj['symbol'] == self.symbol)
+            
+            if positions['positionAmt'] == '0.000':
+                self.logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
+                self.data.remove(self.symbol)
+                sys.exit()
+
             current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
+
+
             if current_index == len(exit_prices):
                 self.logger.info(f'ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
@@ -184,6 +216,7 @@ class Binance():
                         side='SELL',
                         type='MARKET',
                         quantity=sell_quantity,
+                        reduceOnly= current_index == len(exit_prices)-1,
                         recvWindow=60000
                     )
                     alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. SELLING {sell_quantity} AT {sell_price}.')
@@ -203,24 +236,24 @@ class Binance():
                     else:
                         stop_loss_price = entry_price
 
-            elif current_price <= stop_loss_price:
-                self.logger.info(f'STOP LOSS ACHIEVED')
-                # sell all if stop_loss_price is acheived
-                try:
-                    sell_order = self.client.futures_create_order(
-                        symbol=self.symbol,
-                        side='SELL',
-                        type='MARKET',
-                        quantity=quantity,
-                        recvWindow=60000
-                    )
-                    self.data.remove(self.symbol)
-                    alert_bot.send_message(self.user, f'STOP LOSS ACHIEVED. SELLING {quantity} AT {current_price}.')
-                    sys.exit()
-                except Exception as e:
-                    self.logger.error(f'FAILED TO SELL AT STOP LOSS')
-                    self.logger.error(f'ERROR INDENTIFIED : {e}')
-                    continue
+            # elif current_price <= stop_loss_price:
+            #     self.logger.info(f'STOP LOSS ACHIEVED')
+            #     # sell all if stop_loss_price is acheived
+            #     try:
+            #         sell_order = self.client.futures_create_order(
+            #             symbol=self.symbol,
+            #             side='SELL',
+            #             type='MARKET',
+            #             quantity=quantity,
+            #             recvWindow=60000
+            #         )
+            #         self.data.remove(self.symbol)
+            #         alert_bot.send_message(self.user, f'STOP LOSS ACHIEVED. SELLING {quantity} AT {current_price}.')
+            #         sys.exit()
+            #     except Exception as e:
+            #         self.logger.error(f'FAILED TO SELL AT STOP LOSS')
+            #         self.logger.error(f'ERROR INDENTIFIED : {e}')
+            #         continue
     
     def sell(self):
         try:
@@ -228,7 +261,7 @@ class Binance():
             self.set_leverage()
             #self.set_margintype()            
 
-            budget = self.configur.getint('Binance','USDT_BUDGET')
+            budget = self.configur.getfloat('Binance','USDT_BUDGET')
 
             current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])                                                 
             self.logger.info(f'CURRENT PRICE OF {self.symbol} is {current_price}')
@@ -257,7 +290,7 @@ class Binance():
                 order_details = self.client.futures_get_order(symbol=self.symbol,orderId=order['orderId'],recvWindow=60000)
                 entry_price = float(order_details['avgPrice'])
 
-                stop_loss_percentage = self.configur.getint('Binance','STOP_PERCENTAGE')
+                stop_loss_percentage = self.configur.getfloat('Binance','STOP_PERCENTAGE')
                 stop_loss_price = entry_price + ((stop_loss_percentage / 100) * entry_price)
 
                 # getting trade data ready
@@ -272,7 +305,7 @@ class Binance():
                 exit_target_percentages_list = [] # store percentages
 
                 for i in range(1, exit_points+1):                   
-                    exit_target_percentages_list.append(self.configur.getint('Binance',f'EXIT_{i}_TARGET_PRICE'))
+                    exit_target_percentages_list.append(self.configur.getfloat('Binance',f'EXIT_{i}_TARGET_PRICE'))
 
                 exit_prices = []    # store target prices
                 # convert percentages into prices
