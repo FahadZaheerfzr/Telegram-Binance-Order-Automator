@@ -2,7 +2,6 @@ import time
 from binance.client import Client
 from configparser import ConfigParser
 from binance.um_futures import UMFutures
-from telethon import TelegramClient
 import telebot # pip install pyTelegramBotAPI
 from data import Data, PriceData
 import dotenv
@@ -19,7 +18,7 @@ time_logger = setup_logger("time-logger")
 
 class Binance():
 
-    def __init__(self, symbol):
+    def __init__(self, symbol, binance_client):
 
         self.logger = setup_logger("binance-order")
         self.price_data = PriceData()
@@ -37,15 +36,15 @@ class Binance():
             self.symbol = symbol+"USDT"
             self.data = Data()
             # Replace 'YOUR_API_KEY' and 'YOUR_API_SECRET' with your actual Binance API credentials
-            self.api_key = self.configur.get('Binance','BINANCE_API_KEY')
-            self.api_secret = self.configur.get('Binance','BINANCE_API_SECRET')
+            #self.api_key = self.configur.get('Binance','BINANCE_API_KEY')
+            #self.api_secret = self.configur.get('Binance','BINANCE_API_SECRET')
             # Initialize the Binance client
-            self.mode = self.configur.get('Binance','MODE')
-
-            if self.mode == 'LIVE':
-                self.client = Client(self.api_key, self.api_secret)
-            else:
-                self.client = Client(self.api_key, self.api_secret, testnet=True)
+            #self.mode = self.configur.get('Binance','MODE')
+            self.client = binance_client
+            # if self.mode == 'LIVE':
+            #     self.client = Client(self.api_key, self.api_secret)
+            # else:
+            #     self.client = Client(self.api_key, self.api_secret, testnet=True)
            
             # for accessing public api
             self.um_futures_client = UMFutures()
@@ -201,7 +200,7 @@ class Binance():
                 sys.exit()
 
             current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
-
+            print(current_price)
 
             if current_index == len(exit_prices):
                 self.logger.info(f'ALL EXIT POINTS ACHIEVED')
@@ -216,15 +215,28 @@ class Binance():
                 else:
                     sell_quantity = round(sell_quantity,3)
                 try:
-                    sell_order = self.client.futures_create_order(
-                        symbol=self.symbol,
-                        side='SELL',
-                        type='MARKET',
-                        quantity=sell_quantity,
-                        reduceOnly= current_index == len(exit_prices)-1,
-                        recvWindow=60000
-                    )
-                    alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. SELLING {sell_quantity} AT {sell_price}.')
+                    if current_index == len(exit_prices)-1:
+                        if positions['positionAmt'][0] == "-":
+                            positions['positionAmt'] = positions['positionAmt'][1:]
+
+                        sell_order = self.client.futures_create_order(
+                            symbol=self.symbol,
+                            side='SELL',
+                            type='MARKET',
+                            quantity=float(positions['positionAmt']),
+                            recvWindow=60000
+                        )
+
+                        cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
+                    else:
+                        sell_order = self.client.futures_create_order(
+                            symbol=self.symbol,
+                            side='SELL',
+                            type='MARKET',
+                            quantity=sell_quantity,
+                            recvWindow=60000
+                        )
+                    alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. SELLING {sell_quantity} AT {current_price}')
                     self.logger.info(f'EXIT POINT {current_index+1} ACHIEVED')
                     current_index += 1
                 except Exception as e:
@@ -287,6 +299,7 @@ class Binance():
 
             if self.symbol == 'BTCUSDT':
                 stop_loss_price = round(stop_loss_price,2)
+
 
             self.logger.info(f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
@@ -365,14 +378,14 @@ class Binance():
                 sys.exit()
 
             current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
+            print(current_price)
 
 
             if current_index == len(exit_prices):
                 self.logger.info(f'ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
                 sys.exit()
-            if current_price >= exit_prices[current_index]:
-                sell_price = exit_prices[current_index]
+            if current_price <= exit_prices[current_index]:
                 sell_quantity = (int(exit_target_quantity_list[current_index])/100)*quantity
 
                 if sell_quantity > 1:
@@ -382,13 +395,13 @@ class Binance():
                 try:
                     if current_index == len(exit_prices)-1:
                         if positions['positionAmt'][0] == "-":
-                            positions['positionAmt'] = positions['positionAmt'][1:]
+                            sell_quantity = positions['positionAmt'][1:]
 
                         sell_order = self.client.futures_create_order(
                             symbol=self.symbol,
                             side='BUY',
                             type='MARKET',
-                            quantity=float(positions['positionAmt']),
+                            quantity=float(sell_quantity),
                             recvWindow=60000
                         )
 
@@ -401,8 +414,7 @@ class Binance():
                             quantity=sell_quantity,
                             recvWindow=60000
                         )
-
-                    alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. SELLING {sell_quantity} AT {sell_price}.')
+                    alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. BUYING {sell_quantity} AT {current_price}.')
                     self.logger.info(f'EXIT POINT {current_index+1} ACHIEVED')
                     current_index += 1
                 except Exception as e:

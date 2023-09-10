@@ -1,4 +1,6 @@
 from telethon import TelegramClient, events
+from binance.client import Client
+
 import logging
 import threading
 from configparser import ConfigParser
@@ -21,6 +23,14 @@ api_secret = config.get('Telegram','API_HASH')
 username = config.get('Telegram','USERNAME')
 user_input_channel = int(config.get('Telegram','TARGET_GROUP'))
 excluded_symbols = config.get('Binance','EXCLUDED_SYMBOLS').strip('][').split(',')
+binance_api_key = config.get('Binance','BINANCE_API_KEY')
+binance_api_secret = config.get('Binance','BINANCE_API_SECRET')
+mode = config.get('Binance','MODE')
+
+if mode == 'LIVE':
+    binance_client = Client(binance_api_key, binance_api_secret)
+else:
+    binance_client = Client(binance_api_key, binance_api_secret, testnet=True)
 
 WORDS_DICT = {
     'buy': [['buy', 'setup'], ['long', 'setup'], ['buy', 'high', 'sell', 'higher']],
@@ -33,11 +43,11 @@ print(excluded_symbols)
 client = TelegramClient(username, api_key, api_secret)
 
 def sell(symbol):
-    obj = createTestOrder.Binance(symbol)
+    obj = createTestOrder.Binance(symbol, binance_client)
     obj.sell()
 
 async def buy(symbol):
-    obj = createTestOrder.Binance(symbol)
+    obj = createTestOrder.Binance(symbol, binance_client)
     await obj.buy()
 
 
@@ -57,8 +67,9 @@ async def newMessageListener(event):
     except Exception as e:
         print(e)
         return
+    
 
-    if symbol in Data.data:
+    if symbol+"USDT" in Data.data:
         logger.info(f'Already recieved message for {symbol}')
         return
 
