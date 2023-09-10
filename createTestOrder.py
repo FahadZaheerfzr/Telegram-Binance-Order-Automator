@@ -200,7 +200,6 @@ class Binance():
                 sys.exit()
 
             current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
-            print(current_price)
 
             if current_index == len(exit_prices):
                 self.logger.info(f'ALL EXIT POINTS ACHIEVED')
@@ -236,22 +235,40 @@ class Binance():
                             quantity=sell_quantity,
                             recvWindow=60000
                         )
-                    alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. SELLING {sell_quantity} AT {current_price}')
-                    self.logger.info(f'EXIT POINT {current_index+1} ACHIEVED')
+                        cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
+                        if current_index > 1:
+                            stop_loss_price = exit_prices[current_index-2]
+                        else:
+                            stop_loss_price = entry_price
+
+                        alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. SELLING {sell_quantity} AT {current_price}')
+                        self.logger.info(f'EXIT POINT {current_index+1} ACHIEVED')
+                        
+                        updated_stop_loss = self.client.futures_create_order(
+                            symbol=self.symbol,
+                            side='SELL',
+                            type='STOP_MARKET',
+                            quantity=sell_quantity,
+                            stopPrice=stop_loss_price,
+                            recvWindow=60000,
+                            reduceOnly=True,
+                        )
+
+                        alert_bot.send_message(self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                        self.logger.info(f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+
+                    
                     current_index += 1
                 except Exception as e:
                     self.logger.error(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
                     self.logger.error(f'ERROR INDENTIFIED : {e}')
                     continue
 
-                if sell_order:
+                if sell_order and current_index != len(exit_prices):
                     self.logger.info(f'EXIT POINT {current_index+1} ACHIEVED')
                     self.logger.info(f'SOLD at {current_price}')
                     
-                    if current_index > 1:
-                        stop_loss_price = exit_prices[current_index-2]
-                    else:
-                        stop_loss_price = entry_price
+                    
 
             # elif current_price <= stop_loss_price:
             #     self.logger.info(f'STOP LOSS ACHIEVED')
@@ -374,11 +391,11 @@ class Binance():
             
             if positions['positionAmt'] == '0.000':
                 self.logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
+                alert_bot.send_message(self.user, f'POSITION CLOSED BY STOP LOSS ORDER')
                 self.data.remove(self.symbol)
                 sys.exit()
 
             current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
-            print(current_price)
 
 
             if current_index == len(exit_prices):
@@ -414,8 +431,26 @@ class Binance():
                             quantity=sell_quantity,
                             recvWindow=60000
                         )
-                    alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. BUYING {sell_quantity} AT {current_price}.')
-                    self.logger.info(f'EXIT POINT {current_index+1} ACHIEVED')
+                        alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. BUYING {sell_quantity} AT {current_price}.')
+                        self.logger.info(f'EXIT POINT {current_index+1} ACHIEVED')
+
+                        cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
+                        if current_index > 1:
+                            stop_loss_price = exit_prices[current_index-2]
+                        else:
+                            stop_loss_price = entry_price
+                        
+                        updated_stop_loss = self.client.futures_create_order(
+                            symbol=self.symbol,
+                            side='BUY',
+                            type='STOP_MARKET',
+                            quantity=sell_quantity,
+                            stopPrice=stop_loss_price,
+                            recvWindow=60000,
+                        )
+
+                        alert_bot.send_message(self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                        self.logger.info(f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
                     current_index += 1
                 except Exception as e:
                     self.logger.error(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
