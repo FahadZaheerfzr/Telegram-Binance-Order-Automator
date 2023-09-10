@@ -55,6 +55,7 @@ async def newMessageListener(event):
         newMessage = newMessage.lower()
         symbol = newMessage.split("#")[1].split(" ")[0].upper()
     except Exception as e:
+        print(e)
         return
 
     if symbol in Data.data:

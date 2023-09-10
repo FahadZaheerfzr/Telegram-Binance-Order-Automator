@@ -121,6 +121,9 @@ class Binance():
             stop_loss_percentage = self.configur.getfloat('Binance','STOP_PERCENTAGE')
             stop_loss_price = round(current_price - ((stop_loss_percentage / 100) * current_price),4)
 
+            if self.symbol == 'BTCUSDT':
+                stop_loss_price = round(stop_loss_price,2)
+
             self.logger.info(f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
                 symbol=self.symbol,
@@ -189,10 +192,11 @@ class Binance():
         
         # Monitor the price of the token        
         while True:
-            positions = next(obj for obj in self.client.futures_account()['positions'] if obj['symbol'] == self.symbol)
+            positions = next(obj for obj in self.client.futures_account(recvWindow=60000)['positions'] if obj['symbol'] == self.symbol)
             
             if positions['positionAmt'] == '0.000':
                 self.logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
+                alert_bot.send_message(self.user, f'POSITION CLOSED BY STOP LOSS ORDER')
                 self.data.remove(self.symbol)
                 sys.exit()
 
@@ -281,6 +285,9 @@ class Binance():
             stop_loss_percentage = self.configur.getfloat('Binance','STOP_PERCENTAGE')
             stop_loss_price = round(current_price + ((stop_loss_percentage / 100) * current_price),4)
 
+            if self.symbol == 'BTCUSDT':
+                stop_loss_price = round(stop_loss_price,2)
+
             self.logger.info(f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
                 symbol=self.symbol,
@@ -350,7 +357,7 @@ class Binance():
         
         # Monitor the price of the token        
         while True:
-            positions = next(obj for obj in self.client.futures_account()['positions'] if obj['symbol'] == self.symbol)
+            positions = next(obj for obj in self.client.futures_account(recvWindow=60000,)['positions'] if obj['symbol'] == self.symbol)
             
             if positions['positionAmt'] == '0.000':
                 self.logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
@@ -373,14 +380,28 @@ class Binance():
                 else:
                     sell_quantity = round(sell_quantity,3)
                 try:
-                    sell_order = self.client.futures_create_order(
-                        symbol=self.symbol,
-                        side='BUY',
-                        type='MARKET',
-                        quantity=sell_quantity,
-                        reduceOnly= current_index == len(exit_prices)-1,
-                        recvWindow=60000
-                    )
+                    if current_index == len(exit_prices)-1:
+                        if positions['positionAmt'][0] == "-":
+                            positions['positionAmt'] = positions['positionAmt'][1:]
+
+                        sell_order = self.client.futures_create_order(
+                            symbol=self.symbol,
+                            side='BUY',
+                            type='MARKET',
+                            quantity=float(positions['positionAmt']),
+                            recvWindow=60000
+                        )
+
+                        cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
+                    else:
+                        sell_order = self.client.futures_create_order(
+                            symbol=self.symbol,
+                            side='BUY',
+                            type='MARKET',
+                            quantity=sell_quantity,
+                            recvWindow=60000
+                        )
+
                     alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. SELLING {sell_quantity} AT {sell_price}.')
                     self.logger.info(f'EXIT POINT {current_index+1} ACHIEVED')
                     current_index += 1
