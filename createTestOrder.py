@@ -8,7 +8,7 @@ import dotenv
 import sys
 from utils import setup_logger
 from symbols import cryptocurrencies
-
+import price_precision
 # Read a variable called CONFIG from dotenv
 # This variable will contain the path to the configuration file
 SYMBOLS = dotenv.dotenv_values()['SYMBOLS']
@@ -115,13 +115,10 @@ class Binance():
             if quantity > 1:
                 quantity = int(quantity) # if it is 1.14324 return 1
             else:
-                quantity = float(round(quantity,3)) # if it is 0.95435 return 0.954
+                quantity = float(round(quantity,price_precision.quantity_precision[self.symbol])) # if it is 0.95435 return 0.954
 
             stop_loss_percentage = self.configur.getfloat('Binance','STOP_PERCENTAGE')
-            stop_loss_price = round(current_price - ((stop_loss_percentage / 100) * current_price),4)
-
-            if self.symbol == 'BTCUSDT':
-                stop_loss_price = round(stop_loss_price,2)
+            stop_loss_price = round(current_price - ((stop_loss_percentage / 100) * current_price),price_precision.price_precision[self.symbol])
 
             self.logger.info(f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
@@ -212,7 +209,7 @@ class Binance():
                 if sell_quantity > 1:
                     sell_quantity = int(sell_quantity)
                 else:
-                    sell_quantity = round(sell_quantity,3)
+                    sell_quantity = round(sell_quantity,price_precision.quantity_precision[self.symbol])
                 try:
                     if current_index == len(exit_prices)-1:
                         if positions['positionAmt'][0] == "-":
@@ -309,14 +306,10 @@ class Binance():
             if quantity > 1:
                 quantity = int(quantity) # if it is 1.14324 return 1
             else:
-                quantity = float(round(quantity,3)) # if it is 0.95435 return 0.954
+                quantity = float(round(quantity,price_precision.quantity_precision[self.symbol])) # if it is 0.95435 return 0.954
 
             stop_loss_percentage = self.configur.getfloat('Binance','STOP_PERCENTAGE')
-            stop_loss_price = round(current_price + ((stop_loss_percentage / 100) * current_price),4)
-
-            if self.symbol == 'BTCUSDT':
-                stop_loss_price = round(stop_loss_price,2)
-
+            stop_loss_price = round(current_price + ((stop_loss_percentage / 100) * current_price),price_precision.price_precision[self.symbol])
 
             self.logger.info(f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
@@ -408,7 +401,7 @@ class Binance():
                 if sell_quantity > 1:
                     sell_quantity = int(sell_quantity)
                 else:
-                    sell_quantity = round(sell_quantity,3)
+                    sell_quantity = round(sell_quantity,price_precision.quantity_precision[self.symbol])
                 try:
                     if current_index == len(exit_prices)-1:
                         if positions['positionAmt'][0] == "-":
