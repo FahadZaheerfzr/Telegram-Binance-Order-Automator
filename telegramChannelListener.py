@@ -43,11 +43,11 @@ print(excluded_symbols)
 client = TelegramClient(username, api_key, api_secret)
 
 
-# all_symbols_info = binance_client.futures_exchange_info()
+all_symbols_info = binance_client.futures_exchange_info()
 
-# with open('symbols.txt', 'w') as f:
-#     for symbol in all_symbols_info['symbols']:
-#         f.write(json.dumps(symbol['symbol']) + ':' + json.dumps(symbol['quantityPrecision']) + ',\n')
+with open('symbols.txt', 'w') as f:
+    for symbol in all_symbols_info['symbols']:
+        f.write(json.dumps(symbol['symbol']) + ':' + json.dumps(symbol['quantityPrecision']) + ',\n')
 
 def sell(symbol):
     obj = createTestOrder.Binance(symbol, binance_client)

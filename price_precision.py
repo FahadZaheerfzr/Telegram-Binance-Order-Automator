@@ -232,6 +232,7 @@ price_precision = {
     "DARUSDT": 4,
     "XMRUSDT": 3,
     "ETHUSDT_231229": 2,
+    "BLZUSDT": 5,
 }
 
 
@@ -469,4 +470,5 @@ quantity_precision = {
     "DARUSDT": 1,
     "XMRUSDT": 3,
     "ETHUSDT_231229": 3,
+    "BLZUSDT": 0,
 }
