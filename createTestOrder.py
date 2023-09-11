@@ -195,7 +195,7 @@ class Binance():
                 self.data.remove(self.symbol)
                 sys.exit()
             print(positions)
-            if positions['positionAmt'] == '0.000':
+            if float(positions['positionAmt']) == 0.0:
                 self.logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(self.user, f'POSITION CLOSED BY STOP LOSS ORDER')
                 self.data.remove(self.symbol)
@@ -395,7 +395,7 @@ class Binance():
                 self.data.remove(self.symbol)
                 sys.exit()
 
-            if positions['positionAmt'] == '0.000':
+            if float(positions['positionAmt']) == 0.0:
                 self.logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(self.user, f'POSITION CLOSED BY STOP LOSS ORDER')
                 self.data.remove(self.symbol)
