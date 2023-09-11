@@ -470,11 +470,7 @@ class Binance():
                 if sell_order:
                     self.logger.info(f'EXIT POINT {current_index} ACHIEVED')
                     self.logger.info(f'SOLD at {current_price}')
-                    
-                    if current_index > 1:
-                        stop_loss_price = exit_prices[current_index-2]
-                    else:
-                        stop_loss_price = entry_price
+                
                 alert_bot.send_message(self.user, f'EXIT POINT {current_index} ACHIEVED. BUYING {sell_quantity} {self.symbol} AT {current_price}.')
                 self.logger.info(f'EXIT POINT {current_index} ACHIEVED')
             
