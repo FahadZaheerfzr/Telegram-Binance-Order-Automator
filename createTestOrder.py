@@ -194,7 +194,7 @@ class Binance():
                 self.logger.info(f'ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
                 sys.exit()
-
+            print(positions)
             if positions['positionAmt'] == '0.000':
                 self.logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(self.user, f'POSITION CLOSED BY STOP LOSS ORDER')
@@ -224,6 +224,7 @@ class Binance():
                             quantity=float(positions['positionAmt']),
                             recvWindow=60000
                         )
+                        print(sell_order)
                         cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                     else:
                         sell_order = self.client.futures_create_order(
@@ -234,6 +235,7 @@ class Binance():
                             recvWindow=60000,
                             reduceOnly=True,
                         )
+                        print(sell_order)
                 except Exception as e:
                     self.logger.error(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
                     self.logger.error(f'ERROR INDENTIFIED : {e}')
@@ -420,10 +422,12 @@ class Binance():
                             side='BUY',
                             type='MARKET',
                             quantity=float(sell_quantity),
-                            recvWindow=60000
+                            recvWindow=60000,
+                            reduceOnly=True,
                         )
 
                         cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
+                        print(sell_order)
                     else:
                         sell_order = self.client.futures_create_order(
                             symbol=self.symbol,
@@ -432,6 +436,7 @@ class Binance():
                             quantity=sell_quantity,
                             recvWindow=60000
                         )
+                        print(sell_order)
                 except Exception as e:
                     self.logger.error(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
                     self.logger.error(f'ERROR INDENTIFIED : {e}')
