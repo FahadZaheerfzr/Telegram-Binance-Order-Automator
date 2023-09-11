@@ -222,7 +222,7 @@ class Binance():
                             quantity=float(positions['positionAmt']),
                             recvWindow=60000
                         )
-
+                        alert_bot.send_message(self.user, f'EXIT POINT {current_index+1} ACHIEVED. SELLING {sell_quantity} AT {current_price}')
                         cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                     else:
                         sell_order = self.client.futures_create_order(
