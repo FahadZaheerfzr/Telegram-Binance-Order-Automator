@@ -194,7 +194,6 @@ class Binance():
                 self.logger.info(f'ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
                 sys.exit()
-            print(positions)
             if float(positions['positionAmt']) == 0.0:
                 self.logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(self.user, f'POSITION CLOSED BY STOP LOSS ORDER')
@@ -243,7 +242,7 @@ class Binance():
                 
                 cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                 if current_index > 1:
-                    stop_loss_price = exit_prices[current_index-2]
+                    stop_loss_price = exit_prices[current_index-1]
                 else:
                     stop_loss_price = entry_price
                 
@@ -446,7 +445,7 @@ class Binance():
 
                 cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                 if current_index > 1:
-                    stop_loss_price = exit_prices[current_index-2]
+                    stop_loss_price = exit_prices[current_index-1]
                 else:
                     stop_loss_price = entry_price
                 try:
