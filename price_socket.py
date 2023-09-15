@@ -4,7 +4,20 @@ import websocket
 from symbols import cryptocurrencies
 from data import PriceData
 from utils import setup_logger
-socket = f'wss://stream.binance.com:9443/stream?streams=btcusdt@ticker'
+from configparser import ConfigParser
+
+config = ConfigParser()
+config.read('default_config.ini')
+
+mode = config.get('Binance','MODE')
+
+
+if mode == 'LIVE':
+    BASE_URL = 'wss://fstream.binance.com'
+else:
+    BASE_URL = 'wss://fstream.binancefuture.com'
+
+socket = f'{BASE_URL}/stream?streams=btcusdt@ticker'
 
 price_data = PriceData()
 
@@ -15,7 +28,7 @@ for i in cryptocurrencies:
   
 
 def on_message(ws,message):
-    message = json.loads(message)
+    message = json.loads(message) 
     price_data.price_data[cryptocurrencies.index(message['data']['s'])] = round(float(message['data']['c']),3)
     #price_data_logger.info(price_data.price_data+['\n'])
 
@@ -25,7 +38,7 @@ def on_error(ws,error):
     print(error)
 
 def on_open(ws):
-    print('Connection Open')
+    print('Price connection Open')
 
 def on_close(ws,close_status,close_msg):
     print('CONNECTION CLOSED')

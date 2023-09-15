@@ -13,7 +13,7 @@ def setup_logger(logfile, logdir=os.getcwd() + "/data/log"):
     today = datetime.datetime.now().strftime("%Y-%m-%d")
     
     # Define logfile paths
-    current_logfile_path = os.path.join(logdir, logfile + "-" + today + ".log")
+    current_logfile_path = os.path.join(logdir, 'monitoring' + "-" + today + ".log")
     old_logfile_paths = [os.path.join(logdir, fname) for fname in os.listdir(logdir) if fname.startswith(logfile + "-")]
     
     # Delete log files older than 3 days
@@ -26,8 +26,8 @@ def setup_logger(logfile, logdir=os.getcwd() + "/data/log"):
             pass  # Ignore filenames that don't match the expected pattern
     
     logger = logging.getLogger(logfile)
-    logger.setLevel(logging.DEBUG)
-
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     # Add a file handler to write logs to the specified file

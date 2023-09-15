@@ -18,7 +18,8 @@ class Data:
     
     # Remove a value from the array
     def remove(self, value):
-        self.data.remove(value)
+        if value in self.data:
+            self.data.remove(value)
 
     # Get the array size
     def size(self):
@@ -51,7 +52,8 @@ class PriceData:
     
     # Remove a value from the array
     def remove(self, value):
-        self.price_data.remove(value)
+        if value in self.price_data:
+            self.price_data.remove(value)
 
     # Get the array size
     def size(self):
@@ -64,3 +66,36 @@ class PriceData:
     # Print the array
     def print(self):
         print(self.price_data)
+        
+class PositionData:
+    # Static array that is global to the program
+    position_data = [False] * 202
+
+    # Constructor
+    def __init__(self):
+        pass
+
+    # Add a value to the array
+    def add(self, value):
+        self.position_data.append(value)
+
+    # Get the array
+    def get(self):
+        return self.position_data
+    
+    # Remove a value from the array
+    def remove(self, value):
+        if value in self.position_data:
+            self.position_data.remove(value)
+
+    # Get the array size
+    def size(self):
+        return len(self.position_data)
+
+    # Clear the array
+    def clear(self):
+        self.position_data = []
+
+    # Print the array
+    def print(self):
+        print(self.position_data)

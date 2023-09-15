@@ -4,3 +4,4 @@ python-binance
 binance-futures-connector
 pyTelegramBotAPI
 python-dotenv
+pymongo
