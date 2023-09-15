@@ -21,6 +21,8 @@ logger = setup_logger("binance-order")
 
 collections = DB["collections"]  # Replace with your collection name
 
+
+
 class Binance():
 
     def __init__(self, symbol, binance_client):
@@ -36,6 +38,7 @@ class Binance():
                 self.configur.read(f'{symbol.lower()}_config.ini')
             else:
                 self.configur.read('default_config.ini')
+            self.stop_loss_levels = self.configur.getint('Binance','STOP_LOSS_UPDATE_LEVEL')
             self.bot_token = self.configur.get('Telegram','BOT_TOKEN')
             self.user = self.configur.getint('Telegram','MY_USER')
             self.symbol = symbol+"USDT"
@@ -174,7 +177,7 @@ class Binance():
                     continue  
                 
                 cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
-                if current_index >= 1:
+                if current_index % self.stop_loss_levels == 0 and current_index != 0:
                     stop_loss_price = exit_prices[current_index-1]
                 else:
                     stop_loss_price = entry_price
@@ -384,7 +387,7 @@ class Binance():
                         
 
                 cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
-                if current_index >= 1:
+                if current_index % self.stop_loss_levels == 0 and current_index != 0:
                     stop_loss_price = exit_prices[current_index-1]
                 else:
                     stop_loss_price = entry_price
