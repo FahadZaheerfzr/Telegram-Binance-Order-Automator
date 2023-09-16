@@ -13,7 +13,7 @@ import price_socket
 import position_socket
 from connection import DB
 import telebot # pip install pyTelegramBotAPI
-
+from timer import CustomTime
 
 logger = setup_logger("telegram-listener")
 
@@ -48,7 +48,7 @@ WORDS_DICT = {
 def keep_alive():
     while True:
         try:
-            binance_client.ping()
+            binance_client.futures_ping()
         except Exception as e:
             logger.error(f'Error in keeping binance client alive : {e}')
         time.sleep(60)
@@ -122,6 +122,8 @@ async def newMessageListener(event):
         logger.info(f'Already recieved message for {symbol}')
         return
 
+    mytime = CustomTime()
+    mytime.start_time()
     logger.info(f'Recieved new message : {newMessage}')
 
     if symbol in excluded_symbols:

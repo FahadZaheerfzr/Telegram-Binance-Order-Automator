@@ -10,7 +10,7 @@ from utils import setup_logger
 from symbols import cryptocurrencies
 import price_precision
 from connection import DB
-
+from timer import CustomTime
 # Read a variable called CONFIG from dotenv
 # This variable will contain the path to the configuration file
 SYMBOLS = dotenv.dotenv_values()['SYMBOLS']
@@ -29,6 +29,7 @@ class Binance():
 
         self.price_data = PriceData()
         self.position_data = PositionData()
+        self.timer = CustomTime()
         try:
             # reading config file
             self.configur = ConfigParser()
@@ -217,7 +218,6 @@ class Binance():
             # setting desired margin type and leverage 
             #self.set_leverage()
             #self.set_margintype()            
-            time_start = time.time()
             budget = self.configur.getfloat('Binance','USDT_BUDGET')
             try:
                 current_price = self.price_data.price_data[cryptocurrencies.index(self.symbol)]          
@@ -243,8 +243,10 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,     
             )
-            time_end = time.time()
-            time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_end-time_start}')
+            
+            time_taken = self.timer.end_time()
+            
+            time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
 
             
             
@@ -441,7 +443,6 @@ class Binance():
 
     def sell(self):
         try:
-            time_start = time.time()
             # setting desired margin type and leverage 
             #self.set_leverage()
             #self.set_margintype()            
@@ -469,9 +470,9 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,     
             )
-            time_end = time.time()
-            time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_end-time_start}')
-
+            time_taken = self.timer.end_time()
+            time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
+            
             self.data.add(self.symbol)
 
             # Check the response
