@@ -1,4 +1,5 @@
 import json
+import time
 import threading
 import websocket
 from symbols import cryptocurrencies
@@ -68,7 +69,16 @@ ws = websocket.WebSocketApp(socket,on_open=on_open,on_message=on_message,on_erro
 def main():
   ws.run_forever()
 
+def refresh_listen_key():
+    while True:
+        binance_client.futures_stream_keepalive(listen_key)
+        time.sleep(60*30)
 
+
+
+r_thread = threading.Thread(target=refresh_listen_key)
+r_thread.daemon = True
+r_thread.start()
 
 s_thread = threading.Thread(target=main)
 s_thread.daemon = True
