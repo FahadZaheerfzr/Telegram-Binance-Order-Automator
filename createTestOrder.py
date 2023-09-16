@@ -119,7 +119,10 @@ class Binance():
         current_index = item['index']
         
         while True:
-            current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
+            try:
+                current_price = self.price_data.price_data[cryptocurrencies.index(self.symbol)]          
+            except Exception as e:
+                current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
             positionClosed = self.position_data.position_data[cryptocurrencies.index(self.symbol)] # get position data from position_data.py
             
             # positions = PositionData.position_data
@@ -345,7 +348,11 @@ class Binance():
                 collections.delete_one({"_id": item_id})
                 sys.exit()
 
-            current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
+            try:
+                current_price = self.price_data.price_data[cryptocurrencies.index(self.symbol)]          
+            except Exception as e:
+                current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
+            
             
             if current_price <= exit_prices[current_index]:
                 sell_quantity = (int(exit_target_quantity_list[current_index])/100)*quantity
@@ -469,7 +476,7 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,     
             )
-            time_taken = self.timer.end_time()
+            time_taken = end_timer()
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
             
             self.data.add(self.symbol)
