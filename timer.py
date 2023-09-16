@@ -1,19 +1,14 @@
 import time
 
-class CustomTime:
+start = 0
 
-  start = 0
+def start_timer():
+    global start
+    start = time.time()
 
-  def __init__(self):
-    pass
+def end_timer():
+    global start
+    time_taken = time.time() - start
+    start = 0
+    return time_taken
 
-  def start_time(self):
-    self.start = time.time()
-
-  def end_time(self):
-    print(self.start)
-
-    end_time = time.time()
-    return end_time - self.start
-  
-  

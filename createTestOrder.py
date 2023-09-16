@@ -10,7 +10,7 @@ from utils import setup_logger
 from symbols import cryptocurrencies
 import price_precision
 from connection import DB
-from timer import CustomTime
+from timer import end_timer
 # Read a variable called CONFIG from dotenv
 # This variable will contain the path to the configuration file
 SYMBOLS = dotenv.dotenv_values()['SYMBOLS']
@@ -29,7 +29,6 @@ class Binance():
 
         self.price_data = PriceData()
         self.position_data = PositionData()
-        self.timer = CustomTime()
         try:
             # reading config file
             self.configur = ConfigParser()
@@ -244,7 +243,7 @@ class Binance():
                 recvWindow=60000,     
             )
             
-            time_taken = self.timer.end_time()
+            time_taken = end_timer()
             
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
 

@@ -13,7 +13,7 @@ import price_socket
 import position_socket
 from connection import DB
 import telebot # pip install pyTelegramBotAPI
-from timer import CustomTime
+from timer import start_timer, end_timer
 
 logger = setup_logger("telegram-listener")
 
@@ -122,8 +122,8 @@ async def newMessageListener(event):
         logger.info(f'Already recieved message for {symbol}')
         return
 
-    mytime = CustomTime()
-    mytime.start_time()
+    
+    start_timer()
     logger.info(f'Recieved new message : {newMessage}')
 
     if symbol in excluded_symbols:
