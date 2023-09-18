@@ -6,7 +6,7 @@ import telebot # pip install pyTelegramBotAPI
 from data import Data, PriceData, PositionData
 import dotenv
 import sys
-from utils import setup_logger
+from utils import setup_logger, setup_monitor_logger
 from symbols import cryptocurrencies
 import price_precision
 from connection import DB
@@ -18,6 +18,8 @@ SYMBOLS = dotenv.dotenv_values()['SYMBOLS']
 time_logger = setup_logger("time-logger")
 
 logger = setup_logger("binance-order")
+
+monitor_logger = setup_monitor_logger("monitor-logger")
 
 collections = DB["collections"]  # Replace with your collection name
 
@@ -117,12 +119,11 @@ class Binance():
         stop_loss_price = item['stop_loss']
         exit_target_quantity_list = item['exit_target_quantity_list']
         current_index = item['index']
-        
+        stop_loss_index = 0
         while True:
-            try:
-                current_price = self.price_data.price_data[cryptocurrencies.index(self.symbol)]          
-            except Exception as e:
-                current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
+            time.sleep(0.2)
+            current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
+            monitor_logger.info("Made a call to binance")
             positionClosed = self.position_data.position_data[cryptocurrencies.index(self.symbol)] # get position data from position_data.py
             
             # positions = PositionData.position_data
@@ -180,10 +181,13 @@ class Binance():
                     continue  
                 
                 cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
+                
                 if current_index % self.stop_loss_levels == 0 and current_index != 0:
-                    stop_loss_price = exit_prices[current_index-1]
-                else:
-                    stop_loss_price = entry_price
+                    if stop_loss_index == 0:
+                        stop_loss_price = entry_price
+                        stop_loss_index += 1
+                    else:
+                        stop_loss_price = exit_prices[stop_loss_index-1]
                 
                 stop_loss_price = round(stop_loss_price,price_precision.price_precision[self.symbol])
 
@@ -217,6 +221,7 @@ class Binance():
 
     async def buy(self):
         try:
+            logger.info('THREAD STARTED')
             # setting desired margin type and leverage 
             #self.set_leverage()
             #self.set_margintype()            
@@ -245,13 +250,10 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,     
             )
-            
+            logger.info(f'ORDER PLACED : {order["orderId"]} at {current_price}')
             time_taken = end_timer()
             
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
-
-            
-            
             self.data.add(self.symbol)
 
             # Check the response
@@ -331,8 +333,10 @@ class Binance():
         stop_loss_price = item['stop_loss']
         exit_target_quantity_list = item['exit_target_quantity_list']
         current_index = item['index']
-            
+        stop_loss_index = 0
         while True:
+            time.sleep(0.2)
+
             positionClosed = self.position_data.position_data[cryptocurrencies.index(self.symbol)] # get position data from position_data.py            
             
             if current_index == len(exit_prices):
@@ -348,10 +352,8 @@ class Binance():
                 collections.delete_one({"_id": item_id})
                 sys.exit()
 
-            try:
-                current_price = self.price_data.price_data[cryptocurrencies.index(self.symbol)]          
-            except Exception as e:
-                current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
+            current_price = self.price_data.price_data[cryptocurrencies.index(self.symbol)]          
+            monitor_logger.info("Made a call to binance")
             
             
             if current_price <= exit_prices[current_index]:
@@ -387,6 +389,7 @@ class Binance():
                             recvWindow=60000
                         )
                         print(sell_order)
+                        current_index += 1
                 except Exception as e:
                     logger.error(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
                     logger.error(f'ERROR INDENTIFIED : {e}')
@@ -394,11 +397,14 @@ class Binance():
             
                         
 
-                cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
+                cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)               
                 if current_index % self.stop_loss_levels == 0 and current_index != 0:
-                    stop_loss_price = exit_prices[current_index-1]
-                else:
-                    stop_loss_price = entry_price
+                    if stop_loss_index == 0:
+                        stop_loss_price = entry_price
+                        stop_loss_index += 1
+                    else:
+                        stop_loss_price = exit_prices[stop_loss_index-1]
+                
                 try:
                     updated_stop_loss = self.client.futures_create_order(
                         symbol=self.symbol,
@@ -416,7 +422,7 @@ class Binance():
                     logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
                     logger.error(e)
                 
-                current_index += 1
+                
                 collections.update_one({"_id": item_id}, {"$set": {"index": current_index}})
 
                 if sell_order:
