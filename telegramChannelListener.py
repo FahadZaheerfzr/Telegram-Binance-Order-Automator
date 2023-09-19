@@ -71,17 +71,9 @@ def sell(symbol):
         logger.error(f'Error in selling : {e}')
         return
 
-async def buy(symbol):
+def buy(symbol):
     obj = createTestOrder.Binance(symbol, binance_client)
-    await obj.buy()
-
-
-def buy_callback(symbol):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    loop.run_until_complete(buy(symbol))
-    loop.close()
+    obj.buy()
 
 # a function that monitors unclosed transactions
 def monitor_thread(data, binance_client, bot_token):
@@ -133,10 +125,7 @@ async def newMessageListener(event):
     # checking for targeted keywords in message
         # logic for selling    
     if ('buy' in newMessage and 'setup' in newMessage) or ('long' in newMessage and 'setup' in newMessage):
-        s_thread = threading.Thread(target=buy_callback, args=(symbol,))
-        s_thread.daemon = True
-        s_thread.start()
-        
+        buy(symbol)
         # logic for buying
     elif ('sell' in newMessage and 'setup' in newMessage) or ('short' in newMessage and 'setup' in newMessage):
         s_thread = threading.Thread(target=sell, args=(symbol,))

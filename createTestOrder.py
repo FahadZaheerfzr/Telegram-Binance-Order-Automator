@@ -11,6 +11,8 @@ from symbols import cryptocurrencies
 import price_precision
 from connection import DB
 from timer import end_timer
+import threading
+
 # Read a variable called CONFIG from dotenv
 # This variable will contain the path to the configuration file
 SYMBOLS = dotenv.dotenv_values()['SYMBOLS']
@@ -112,6 +114,7 @@ class Binance():
             sys.exit()
 
     def buyMonitor(self, item_id, alert_bot):
+        logger.info('THREAD STARTED')
         item = collections.find_one({"_id": item_id})
         entry_price = item['entry_price']
         quantity = item['quantity']
@@ -163,7 +166,7 @@ class Binance():
                             recvWindow=60000
                         )
                         print(sell_order)
-                        
+                        current_index += 1
                         cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                     else:
                         sell_order = self.client.futures_create_order(
@@ -175,6 +178,7 @@ class Binance():
                             reduceOnly=True,
                         )
                         print(sell_order)
+                        current_index += 1
                 except Exception as e:
                     logger.error(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
                     logger.error(f'ERROR INDENTIFIED : {e}')
@@ -209,7 +213,7 @@ class Binance():
                     logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
                     logger.error(e)
                 
-                current_index += 1
+                
                 collections.update_one({"_id": item_id}, {"$set": {"index": current_index}})
 
                 if sell_order and current_index != len(exit_prices):
@@ -219,9 +223,8 @@ class Binance():
                     
                 alert_bot.send_message(self.user, f'EXIT POINT {current_index} ACHIEVED. SELLING {sell_quantity} {self.symbol} AT {current_price}')
 
-    async def buy(self):
+    def buy(self):
         try:
-            logger.info('THREAD STARTED')
             # setting desired margin type and leverage 
             #self.set_leverage()
             #self.set_margintype()            
@@ -320,8 +323,11 @@ class Binance():
             'index': 0
         })
         
-        # Monitor the price of the token        
-        self.buyMonitor(item.inserted_id, alert_bot)
+        # Monitor the price of the token     
+
+        s_thread = threading.Thread(target=self.buyMonitor, args=(item.inserted_id, alert_bot,))
+        s_thread.daemon = True
+        s_thread.start()   
 
 
     # Monitor the price of the token        
