@@ -6,7 +6,7 @@ import telebot # pip install pyTelegramBotAPI
 from data import Data, PriceData, PositionData
 import dotenv
 import sys
-from utils import setup_logger, setup_monitor_logger
+from utils import setup_logger
 from symbols import cryptocurrencies
 import price_precision
 from connection import DB
@@ -21,11 +21,9 @@ time_logger = setup_logger("time-logger")
 
 logger = setup_logger("binance-order")
 
-monitor_logger = setup_monitor_logger("monitor-logger")
-
 collections = DB["collections"]  # Replace with your collection name
 
-
+SYMBOLS = SYMBOLS.split(',')
 
 class Binance():
 
@@ -126,7 +124,6 @@ class Binance():
         while True:
             time.sleep(0.2)
             current_price = float(self.um_futures_client.ticker_price(self.symbol)["price"])
-            monitor_logger.info("Made a call to binance")
             positionClosed = self.position_data.position_data[cryptocurrencies.index(self.symbol)] # get position data from position_data.py
             
             # positions = PositionData.position_data
@@ -137,8 +134,8 @@ class Binance():
                 collections.delete_one({"_id": item_id})
                 sys.exit()
             if positionClosed == True:
-                logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
-                alert_bot.send_message(self.user, f'POSITION CLOSED BY STOP LOSS ORDER')
+                logger.info(f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
+                alert_bot.send_message(self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                 collections.delete_one({"_id": item_id})
                 self.data.remove(self.symbol)
                 sys.exit()
@@ -332,6 +329,7 @@ class Binance():
 
     # Monitor the price of the token        
     def sellMonitor(self, item_id, alert_bot):
+        logger.info('THREAD STARTED')
         item = collections.find_one({"_id": item_id})
         entry_price = item['entry_price']
         quantity = item['quantity']
@@ -352,14 +350,13 @@ class Binance():
                 sys.exit()
 
             if positionClosed == True:
-                logger.info(f'POSITION CLOSED BY STOP LOSS ORDER')
-                alert_bot.send_message(self.user, f'POSITION CLOSED BY STOP LOSS ORDER')
+                logger.info(f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
+                alert_bot.send_message(self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
                 sys.exit()
 
             current_price = self.price_data.price_data[cryptocurrencies.index(self.symbol)]          
-            monitor_logger.info("Made a call to binance")
             
             
             if current_price <= exit_prices[current_index]:
@@ -560,9 +557,11 @@ class Binance():
             'index': 0
         })
         
-        # Monitor the price of the token        
-        self.sellMonitor(item.inserted_id, alert_bot)
-        
+        # Monitor the price of the token   
+
+        s_thread = threading.Thread(target=self.sellMonitor, args=(item.inserted_id, alert_bot,))
+        s_thread.daemon = True
+        s_thread.start()               
 
 # # if __name__ == "__main__":
 # #     a = Binance()

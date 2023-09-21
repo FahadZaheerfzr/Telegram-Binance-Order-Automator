@@ -8,7 +8,7 @@ def run_script():
     monitor_logger.info("Starting script...")
     while True:
         # Start the script as a subprocess
-        script_process = subprocess.Popen(['py', 'telegramChannelListener.py'],
+        script_process = subprocess.Popen(['python3', 'telegramChannelListener.py'],
                                           stderr=subprocess.PIPE)
         
         # Wait for the script to finish

@@ -5,6 +5,7 @@ from symbols import cryptocurrencies
 from data import PriceData
 from utils import setup_logger
 from configparser import ConfigParser
+from price_precision import price_precision
 
 config = ConfigParser()
 config.read('default_config.ini')
@@ -29,7 +30,7 @@ for i in cryptocurrencies:
 
 def on_message(ws,message):
     message = json.loads(message) 
-    price_data.price_data[cryptocurrencies.index(message['data']['s'])] = round(float(message['data']['c']),3)
+    price_data.price_data[cryptocurrencies.index(message['data']['s'])] = round(float(message['data']['c']), price_precision[message['data']['s']])
     #price_data_logger.info(price_data.price_data+['\n'])
 
 
