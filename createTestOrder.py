@@ -70,7 +70,6 @@ class Binance():
         try:
             leverage = int(self.configur.get('Binance','LEVERAGE'))
             # self.symbol = self.configur.get('Binance','SYMBOL')
-            print(leverage)
             self.client.futures_change_leverage(symbol=self.symbol,leverage=leverage,recvWindow=60000)
             time_end = time.time()
             time_logger.info(f'TIME TAKEN TO SET LEVERAGE : {time_end-time_start}')
@@ -132,12 +131,14 @@ class Binance():
                 logger.info(f'ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
+                cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                 sys.exit()
             if positionClosed == True:
                 logger.info(f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                 collections.delete_one({"_id": item_id})
                 self.data.remove(self.symbol)
+                cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                 sys.exit()
 
             
@@ -162,7 +163,6 @@ class Binance():
                             quantity=float(positions['positionAmt']),
                             recvWindow=60000
                         )
-                        print(sell_order)
                         current_index += 1
                         cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                     else:
@@ -174,7 +174,6 @@ class Binance():
                             recvWindow=60000,
                             reduceOnly=True,
                         )
-                        print(sell_order)
                         current_index += 1
                 except Exception as e:
                     logger.error(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
@@ -264,15 +263,24 @@ class Binance():
                 stop_loss_price = round(entry_price - ((stop_loss_percentage / 100) * entry_price),price_precision.price_precision[self.symbol])
                 logger.info(f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
                 time_start = time.time()
-                stop_loss_order = self.client.futures_create_order(
-                    symbol=self.symbol,
-                    side='SELL',
-                    type='STOP_MARKET',
-                    quantity=quantity,
-                    stopPrice=stop_loss_price,
-                    recvWindow=60000,
-                    reduceOnly=True,
-                )
+                while True:
+                    try:
+                        stop_loss_order = self.client.futures_create_order(
+                            symbol=self.symbol,
+                            side='SELL',
+                            type='STOP_MARKET',
+                            quantity=quantity,
+                            stopPrice=stop_loss_price,
+                            recvWindow=60000,
+                            reduceOnly=True,
+                        )
+                        break
+                    except Exception as e:
+                        logger.error("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
+                        logger.error(e)
+                        time.sleep(3)
+                        continue
+                    
                 time_end = time.time()
                 time_logger.info(f'TIME TAKEN TO PLACE STOP LOSS ORDER : {time_end-time_start}')
 
@@ -344,14 +352,25 @@ class Binance():
             positionClosed = self.position_data.position_data[cryptocurrencies.index(self.symbol)] # get position data from position_data.py            
             
             if current_index == len(exit_prices):
+                trades = self.client.futures_account_trades(symbol=self.symbol,recvWindow=60000)
+
+                pnl = trades[-1]
+                alert_bot.send_message(self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+
                 logger.info(f'ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
                 sys.exit()
 
             if positionClosed == True:
+                trades = self.client.futures_account_trades(symbol=self.symbol,recvWindow=60000)
+
                 logger.info(f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
+                trades = self.client.futures_account_trades(symbol=self.symbol,recvWindow=60000)
+
+                pnl = trades[-1]
+                alert_bot.send_message(self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
                 sys.exit()
@@ -382,7 +401,6 @@ class Binance():
                         )
 
                         cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
-                        print(sell_order)
                     else:
                         sell_order = self.client.futures_create_order(
                             symbol=self.symbol,
@@ -391,7 +409,6 @@ class Binance():
                             quantity=sell_quantity,
                             recvWindow=60000
                         )
-                        print(sell_order)
                         current_index += 1
                 except Exception as e:
                     logger.error(f'FAILED TO SELL AT EXIT POINT {current_index+1}')

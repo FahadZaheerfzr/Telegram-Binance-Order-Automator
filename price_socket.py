@@ -26,7 +26,8 @@ price_data_logger = setup_logger('price_data_logger')
 
 for i in cryptocurrencies:
     socket += f'/{i.lower()}@ticker'
-  
+
+
 
 def on_message(ws,message):
     message = json.loads(message) 
@@ -36,7 +37,7 @@ def on_message(ws,message):
 
 
 def on_error(ws,error):
-    print(error)
+    pass
 
 def on_open(ws):
     print('Price connection Open')

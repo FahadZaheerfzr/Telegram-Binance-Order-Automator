@@ -6,7 +6,7 @@ import logging
 import threading
 from configparser import ConfigParser
 import asyncio
-from data import Data
+from data import Data, PositionData
 from utils import setup_logger
 import createTestOrder
 import price_socket
@@ -50,7 +50,7 @@ WORDS_DICT = {
 def keep_alive():
     while True:
         try:
-            binance_client.self.client.futures_create_order(
+            binance_client.futures_create_order(
                 symbol='XXX',
                 side='SELL',
                 type='MARKET',
@@ -73,7 +73,7 @@ client = TelegramClient(username, api_key, api_secret)
 
 def sell(symbol):
     try:
-        print(symbol)
+        print(symbol, "Called here")
         obj = createTestOrder.Binance(symbol, binance_client)
         obj.sell()
     except Exception as e:
@@ -109,10 +109,9 @@ for data in buy_data:
     threads.append(thread)
     thread.start()
 
-# Wait for all threads to finish
-for thread in threads:
-    thread.join()
 
+
+position_data = PositionData()
 
 @client.on(events.NewMessage(chats=user_input_channel))
 async def newMessageListener(event):
@@ -135,6 +134,7 @@ async def newMessageListener(event):
         logger.info(f'Symbol {symbol} is excluded')
         return
 
+    position_data.position_data[symbol] = False
     # checking for targeted keywords in message
         # logic for selling
     if ('buy' in newMessage and 'setup' in newMessage) or ('long' in newMessage and 'setup' in newMessage):
