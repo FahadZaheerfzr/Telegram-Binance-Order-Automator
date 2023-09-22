@@ -14,6 +14,7 @@ import position_socket
 from connection import DB
 import telebot  # pip install pyTelegramBotAPI
 from timer import start_timer, end_timer
+from symbols import cryptocurrencies
 
 logger = setup_logger("telegram-listener")
 
@@ -134,7 +135,7 @@ async def newMessageListener(event):
         logger.info(f'Symbol {symbol} is excluded')
         return
 
-    position_data.position_data[symbol] = False
+    position_data.position_data[cryptocurrencies.index(symbol+"USDT")] = False
     # checking for targeted keywords in message
         # logic for selling
     if ('buy' in newMessage and 'setup' in newMessage) or ('long' in newMessage and 'setup' in newMessage):

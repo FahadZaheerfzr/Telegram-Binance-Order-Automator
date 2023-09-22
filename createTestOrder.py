@@ -128,12 +128,20 @@ class Binance():
             # positions = PositionData.position_data
             
             if current_index == len(exit_prices):
+                trades = self.client.futures_account_trades(symbol=self.symbol,recvWindow=60000)
+
+                pnl = trades[-1]
+                alert_bot.send_message(self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
                 logger.info(f'ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
                 cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                 sys.exit()
             if positionClosed == True:
+                trades = self.client.futures_account_trades(symbol=self.symbol,recvWindow=60000)
+
+                pnl = trades[-1]
+                alert_bot.send_message(self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
                 logger.info(f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                 collections.delete_one({"_id": item_id})
@@ -360,6 +368,7 @@ class Binance():
                 logger.info(f'ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
+                cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
                 sys.exit()
 
             if positionClosed == True:
@@ -373,6 +382,8 @@ class Binance():
                 alert_bot.send_message(self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
+                cancel_order = self.client.futures_cancel_all_open_orders(symbol=self.symbol,recvWindow=60000)
+
                 sys.exit()
 
             current_price = self.price_data.price_data[cryptocurrencies.index(self.symbol)]          
