@@ -51,13 +51,7 @@ WORDS_DICT = {
 def keep_alive():
     while True:
         try:
-            binance_client.futures_create_order(
-                symbol='XXX',
-                side='SELL',
-                type='MARKET',
-                quantity=1,
-                recvWindow=60000
-            )
+            binance_client.futures_account_balance()
         except Exception as e:
             logger.error(f'Invalid Order just to keep binance Alive')
         time.sleep(60)

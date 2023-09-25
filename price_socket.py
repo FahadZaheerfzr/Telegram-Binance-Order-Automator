@@ -10,8 +10,7 @@ from price_precision import price_precision
 config = ConfigParser()
 config.read('default_config.ini')
 
-mode = config.get('Binance','MODE')
-
+mode = config.get('Binance', 'MODE')
 
 if mode == 'LIVE':
     BASE_URL = 'wss://fstream.binance.com'
@@ -28,28 +27,36 @@ for i in cryptocurrencies:
     socket += f'/{i.lower()}@ticker'
 
 
+def on_message(ws, message):
+    message = json.loads(message)
+    price_data.price_data[cryptocurrencies.index(message['data']['s'])] = round(float(message['data']['c']),
+                                                                                   price_precision[message['data']['s']])
+    # price_data_logger.info(price_data.price_data+['\n'])
 
-def on_message(ws,message):
-    message = json.loads(message) 
-    price_data.price_data[cryptocurrencies.index(message['data']['s'])] = round(float(message['data']['c']), price_precision[message['data']['s']])
-    #price_data_logger.info(price_data.price_data+['\n'])
 
+def on_error(ws, error):
+    print(error)
 
-
-def on_error(ws,error):
-    pass
 
 def on_open(ws):
     print('Price connection Open')
 
-def on_close(ws,close_status,close_msg):
-    print('CONNECTION CLOSED')
 
-ws = websocket.WebSocketApp(socket,on_open=on_open,on_message=on_message,on_error=on_error,on_close=on_close)
+def on_close(ws, close_status, close_msg):
+    print('CONNECTION CLOSED')
+    # Restart the WebSocket connection when it's closed
+    start_websocket()
+
+
+def start_websocket():
+    global ws
+    ws = websocket.WebSocketApp(socket, on_open=on_open, on_message=on_message, on_error=on_error, on_close=on_close)
+    ws.run_forever()
 
 
 def main():
-  ws.run_forever()
+    start_websocket()
+
 
 s_thread = threading.Thread(target=main)
 s_thread.daemon = True
