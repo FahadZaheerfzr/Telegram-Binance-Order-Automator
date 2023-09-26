@@ -42,7 +42,6 @@ def on_message(ws, message):
     if message['e'] == 'ORDER_TRADE_UPDATE':
         message = message['o']
         if message['ot'] == 'STOP_MARKET' and message['X'] == 'FILLED':
-            print(message, "We are printing from")
             position_data.position_data[cryptocurrencies.index(message['s'])] = True
     # price_data_logger.info(price_data.price_data+['\n'])
 
