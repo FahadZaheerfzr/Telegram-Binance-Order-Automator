@@ -121,6 +121,7 @@ class Binance():
         quantity = item['quantity']
         exit_prices = item['exit_points']
         stop_loss_price = item['stop_loss']
+        start_time = item['start_time']
         exit_target_quantity_list = item['exit_target_quantity_list']
         current_index = item['index']
         stop_loss_index = 0
@@ -136,8 +137,8 @@ class Binance():
             if current_index == len(exit_prices):
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
-
                 pnl = trades[-1]
+
                 alert_bot.send_message(
                     self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
                 logger.info(f'ALL EXIT POINTS ACHIEVED')
@@ -149,7 +150,6 @@ class Binance():
             if positionClosed == True:
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
-
                 pnl = trades[-1]
                 alert_bot.send_message(
                     self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
@@ -256,6 +256,7 @@ class Binance():
                     self.user, f'EXIT POINT {current_index} ACHIEVED. SELLING {sell_quantity} {self.symbol} AT {current_price}')
 
     def buy(self):
+        start_time = time.time_ns()
         try:
             # setting desired margin type and leverage
             # self.set_leverage()
@@ -376,7 +377,8 @@ class Binance():
             'exit_target_quantity_list': exit_target_quantity_list,
             'stop_loss': stop_loss_price,
             'exit_points': exit_prices,
-            'index': 0
+            'index': 0,
+            'start_time': start_time
         })
 
         # Monitor the price of the token
