@@ -15,6 +15,7 @@ from connection import DB
 import telebot  # pip install pyTelegramBotAPI
 from timer import start_timer, end_timer
 from symbols import cryptocurrencies
+import re
 
 logger = setup_logger("telegram-listener")
 
@@ -108,6 +109,9 @@ for data in buy_data:
 
 position_data = PositionData()
 
+buyPattern = r'\bbuy\b'
+sellPattern = r'\bsell\b'
+
 @client.on(events.NewMessage(chats=user_input_channel))
 async def newMessageListener(event):
     try:
@@ -123,6 +127,7 @@ async def newMessageListener(event):
         return
 
     start_timer()
+    logger.info(f'Time sent to telegram : {event.message.date}')
     logger.info(f'Recieved new message : {newMessage}')
 
     if symbol in excluded_symbols:
@@ -132,10 +137,10 @@ async def newMessageListener(event):
     position_data.position_data[cryptocurrencies.index(symbol+"USDT")] = False
     # checking for targeted keywords in message
         # logic for selling
-    if ('buy' in newMessage and 'setup' in newMessage) or ('long' in newMessage and 'setup' in newMessage):
+    if (re.search(buyPattern, newMessage, re.IGNORECASE) and 'setup' in newMessage) or ('long' in newMessage and 'setup' in newMessage):
         buy(symbol)
         # logic for buying
-    elif ('sell' in newMessage and 'setup' in newMessage) or ('short' in newMessage and 'setup' in newMessage):
+    elif (re.search(sellPattern, newMessage, re.IGNORECASE) and 'setup' in newMessage) or ('short' in newMessage and 'setup' in newMessage):
         sell(symbol)
 
     # un comment this line to save messages in telegram :

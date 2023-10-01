@@ -208,12 +208,13 @@ class Binance():
 
                 cancel_order = self.client.futures_cancel_all_open_orders(
                     symbol=self.symbol, recvWindow=60000)
-                
+
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
 
                 pnl = trades[-1]
-                alert_bot.send_message(self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                alert_bot.send_message(
+                    self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
                 if current_index % self.stop_loss_levels == 0 and current_index != 0:
                     if stop_loss_index == 0:
                         stop_loss_price = entry_price
@@ -362,11 +363,23 @@ class Binance():
             logger.error(f'ERROR INDENTIFIED : {e}')
             sys.exit()
 
-        alert_bot = telebot.TeleBot(self.bot_token, parse_mode=None)
-        alert_bot.send_message(
-            self.user, f'BUY ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {entry_price}.\nSTOP LOSS PRICE : {stop_loss_price}\nEXIT POINTS : {exit_prices}')
-        alert_bot.send_message(
-            self.user, f'STOP LOSS ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {stop_loss_price}.')
+        for i in range(3):
+            try:
+                alert_bot = telebot.TeleBot(self.bot_token, parse_mode=None)
+                alert_bot.send_message(
+                    self.user, f'BUY ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {entry_price}.\nSTOP LOSS PRICE : {stop_loss_price}\nEXIT POINTS : {exit_prices}')
+                alert_bot.send_message(
+                    self.user, f'STOP LOSS ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {stop_loss_price}.')
+                break
+            except Exception as e:
+                time.sleep(10)
+                if i == 2:
+                    logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                    logger.error(f'ERROR INDENTIFIED : {e}')
+                else:
+                    logger.error(
+                        f'FAILED TO SEND TELEGRAM MESSAGE. RETRYING...')
+                    logger.error(f'ERROR INDENTIFIED : {e}')
 
         # Insert the document into the collection
         item = collections.insert_one({
@@ -660,11 +673,23 @@ class Binance():
             logger.error(f'ERROR INDENTIFIED : {e}')
             sys.exit()
 
-        alert_bot = telebot.TeleBot(self.bot_token, parse_mode=None)
-        alert_bot.send_message(
-            self.user, f'SELL ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {entry_price}.\nSTOP LOSS PRICE : {stop_loss_price}\nEXIT POINTS : {exit_prices}')
-        alert_bot.send_message(
-            self.user, f'STOP LOSS ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {stop_loss_price}.')
+        for i in range(3):
+            try:
+                alert_bot = telebot.TeleBot(self.bot_token, parse_mode=None)
+                alert_bot.send_message(
+                    self.user, f'SELL ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {entry_price}.\nSTOP LOSS PRICE : {stop_loss_price}\nEXIT POINTS : {exit_prices}')
+                alert_bot.send_message(
+                    self.user, f'STOP LOSS ORDER PLACED FOR {quantity.__round__(2)} {self.symbol} at {stop_loss_price}.')
+                break
+            except Exception as e:
+                time.sleep(10)
+                if i == 2:
+                    logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                    logger.error(f'ERROR INDENTIFIED : {e}')
+                else:
+                    logger.error(
+                        f'FAILED TO SEND TELEGRAM MESSAGE. RETRYING...')
+                    logger.error(f'ERROR INDENTIFIED : {e}')
 
         item = collections.insert_one({
             'symbol': self.symbol[:-4],
