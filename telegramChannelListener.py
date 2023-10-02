@@ -114,6 +114,8 @@ sellPattern = r'\bsell\b'
 
 @client.on(events.NewMessage(chats=user_input_channel))
 async def newMessageListener(event):
+    logger.info(f'Time sent to telegram : {event.message.date}')
+    logger.info(f'Recieved new message : {event.message.message}')
     try:
         newMessage = event.message.message
         newMessage = newMessage.lower()
@@ -127,8 +129,6 @@ async def newMessageListener(event):
         return
 
     start_timer()
-    logger.info(f'Time sent to telegram : {event.message.date}')
-    logger.info(f'Recieved new message : {newMessage}')
 
     if symbol in excluded_symbols:
         logger.info(f'Symbol {symbol} is excluded')
