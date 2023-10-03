@@ -35,6 +35,7 @@ excluded_symbols = config.get(
 binance_api_key = config.get('Binance', 'BINANCE_API_KEY')
 binance_api_secret = config.get('Binance', 'BINANCE_API_SECRET')
 mode = config.get('Binance', 'MODE')
+CoolDownTime = config.get('Binance', 'COOLDOWN_TIME')
 
 if mode == 'LIVE':
     binance_client = Client(binance_api_key, binance_api_secret)
@@ -111,40 +112,69 @@ position_data = PositionData()
 
 buyPattern = r'\bbuy\b'
 sellPattern = r'\bsell\b'
+setupPattern = r'\bsetup\b'
+longPattern = r'\blong\b'
+shortPattern = r'\bshort\b'
+# in this if you want to add more key words, lets say longlong for buy,
+# you can add it like this : longlongPattern = r'\bbuy\b|\blonglong\b'
+#and if for example you want to add more keywords for sell, lets say shortshort for sell,
+# you can add it like this : shortshortPattern = r'\bsell\b|\bshortshort\b'
+#then go to line 167 and see the comment there
+
 
 @client.on(events.NewMessage(chats=user_input_channel))
 async def newMessageListener(event):
-    logger.info(f'Time sent to telegram : {event.message.date}')
-    logger.info(f'Recieved new message : {event.message.message}')
     try:
-        newMessage = event.message.message
-        newMessage = newMessage.lower()
-        symbol = newMessage.split("#")[1].split(" ")[0].upper()
+        logger.info(f'Time sent to telegram : {event.message.date}')
+        logger.info(f'Received new message : {event.message.message}')
+        try:
+            newMessage = event.message.message
+            newMessage = newMessage.lower()
+            symbol = newMessage.split("#")[1].split(" ")[0].upper()
+        except Exception as e:
+            print(e)
+            return
+
+        # Check if enough time has passed since the last processing of this symbol
+        current_time_minutes = time.time() / 60
+        last_processed_time = Data.get_last_processed_time(symbol + "USDT")
+        cooldown_minutes = int(CoolDownTime)
+
+        if last_processed_time > 0 and current_time_minutes - last_processed_time < cooldown_minutes:
+            logger.info(f'Cooldown active for {symbol}, time remaining: {round((current_time_minutes - last_processed_time) - cooldown_minutes, 2)} minutes')
+            return
+
+        if symbol + "USDT" in Data.data:
+            logger.info(f'Already received message for {symbol}')
+            return
+
+        Data.update_last_processed_time(symbol + "USDT")
+
+        if symbol in excluded_symbols:
+            logger.info(f'Symbol {symbol} is excluded')
+            return
+
+        position_data.position_data[cryptocurrencies.index(symbol + "USDT")] = False
+        # checking for targeted keywords in message
+            # logic for selling
+            # 'setup' in newMessage) or ('long' in newMessage and 'setup' in newMessage): use regex patterns
+
+        if (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(longPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
+            buy(symbol)
+            # logic for buying
+        elif (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
+            sell(symbol)
+        #here, lets say you added search for longlong in buyPattern and shortshort in sellPattern
+        #then you can add this condition here :
+        #elif (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(longlongPattern, newMessage, re.IGNORECASE)):
+        #    buy(symbol)
+        #elif (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(shortshortPattern, newMessage, re.IGNORECASE)):
+        #    sell(symbol)
+        
+        # un comment this line to save messages in telegram :
+        # await client.forward_messages(entity='me',messages=event.message)
     except Exception as e:
-        print(e)
-        return
-
-    if symbol+"USDT" in Data.data:
-        logger.info(f'Already recieved message for {symbol}')
-        return
-
-    start_timer()
-
-    if symbol in excluded_symbols:
-        logger.info(f'Symbol {symbol} is excluded')
-        return
-
-    position_data.position_data[cryptocurrencies.index(symbol+"USDT")] = False
-    # checking for targeted keywords in message
-        # logic for selling
-    if (re.search(buyPattern, newMessage, re.IGNORECASE) and 'setup' in newMessage) or ('long' in newMessage and 'setup' in newMessage):
-        buy(symbol)
-        # logic for buying
-    elif (re.search(sellPattern, newMessage, re.IGNORECASE) and 'setup' in newMessage) or ('short' in newMessage and 'setup' in newMessage):
-        sell(symbol)
-
-    # un comment this line to save messages in telegram :
-    # await client.forward_messages(entity='me',messages=event.message)
+        logger.error(f'Error in newMessageListener : {e}')
 
 with client:
     client.run_until_disconnected()

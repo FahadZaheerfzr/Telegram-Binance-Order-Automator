@@ -361,7 +361,6 @@ class Binance():
         except Exception as e:
             logger.error(f'FAILED TO PLACE AN ORDER')
             logger.error(f'ERROR INDENTIFIED : {e}')
-            sys.exit()
 
         for i in range(3):
             try:
