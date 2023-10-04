@@ -115,6 +115,10 @@ sellPattern = r'\bsell\b'
 setupPattern = r'\bsetup\b'
 longPattern = r'\blong\b'
 shortPattern = r'\bshort\b'
+highPattern = r'\bhigh\b'
+higherPattern = r'\bhigher\b'
+scalpPattern = r'\bscalp\b'
+swingPattern = r'\bswing\b'
 # in this if you want to add more key words, lets say longlong for buy,
 # you can add it like this : longlongPattern = r'\bbuy\b|\blonglong\b'
 #and if for example you want to add more keywords for sell, lets say shortshort for sell,
@@ -158,10 +162,10 @@ async def newMessageListener(event):
             # logic for selling
             # 'setup' in newMessage) or ('long' in newMessage and 'setup' in newMessage): use regex patterns
 
-        if (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(longPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
+        if (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(longPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(highPattern, newMessage, re.IGNORECASE) and re.search(higherPattern, newMessage, re.IGNORECASE)) or (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(scalpPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(swingPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
             buy(symbol)
-            # logic for buying
-        elif (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
+        # logic for selling
+        elif (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(swingPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(swingPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(scalpPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(scalpPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
             sell(symbol)
         #here, lets say you added search for longlong in buyPattern and shortshort in sellPattern
         #then you can add this condition here :
