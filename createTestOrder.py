@@ -296,6 +296,7 @@ class Binance():
 
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
             self.data.add(self.symbol)
+            self.data.update_last_processed_time(self.symbol)
 
             # Check the response
             if order:
@@ -361,6 +362,7 @@ class Binance():
         except Exception as e:
             logger.error(f'FAILED TO PLACE AN ORDER')
             logger.error(f'ERROR INDENTIFIED : {e}')
+            return
 
         for i in range(3):
             try:
@@ -670,7 +672,7 @@ class Binance():
         except Exception as e:
             logger.error(f'FAILED TO PLACE AN ORDER')
             logger.error(f'ERROR INDENTIFIED : {e}')
-            sys.exit()
+            return
 
         for i in range(3):
             try:

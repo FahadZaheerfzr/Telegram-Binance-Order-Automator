@@ -148,7 +148,6 @@ async def newMessageListener(event):
             logger.info(f'Already received message for {symbol}')
             return
 
-        Data.update_last_processed_time(symbol + "USDT")
 
         if symbol in excluded_symbols:
             logger.info(f'Symbol {symbol} is excluded')
