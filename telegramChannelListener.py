@@ -54,6 +54,7 @@ def keep_alive():
             binance_client.futures_account_balance()
         except Exception as e:
             logger.error(f'Invalid Order just to keep binance Alive')
+            print(e)
         time.sleep(60)
 
 
@@ -74,6 +75,7 @@ def sell(symbol):
         obj.sell()
     except Exception as e:
         logger.error(f'Error in selling : {e}')
+        print(f'Error in selling : {e}')
         return
 
 
@@ -129,7 +131,9 @@ swingPattern = r'\bswing\b'
 async def newMessageListener(client, message):
     try:
         logger.info(f'Time sent to telegram : {message.date}')
+        print(f'Time sent to telegram : {message.date}')
         logger.info(f'Received new message : {message.text}')
+        print(f'Received new message : {message.text}')
         try:
             newMessage = message.text
             newMessage = newMessage.lower()
@@ -145,15 +149,18 @@ async def newMessageListener(client, message):
 
         if last_processed_time > 0 and current_time_minutes - last_processed_time < cooldown_minutes:
             logger.info(f'Cooldown active for {symbol}, time remaining: {round((current_time_minutes - last_processed_time) - cooldown_minutes, 2)} minutes')
+            print(f'Cooldown active for {symbol}, time remaining: {round((current_time_minutes - last_processed_time) - cooldown_minutes, 2)} minutes')
             return
 
         if symbol + "USDT" in Data.data:
             logger.info(f'Already received message for {symbol}')
+            print(f'Already received message for {symbol}')
             return
 
 
         if symbol in excluded_symbols:
             logger.info(f'Symbol {symbol} is excluded')
+            print(f'Symbol {symbol} is excluded')
             return
 
         position_data.position_data[cryptocurrencies.index(symbol + "USDT")] = False
@@ -179,6 +186,7 @@ async def newMessageListener(client, message):
         # await client.forward_messages(entity='me',messages=event.message)
     except Exception as e:
         logger.error(f'Error in newMessageListener : {e}')
+        print(f'Error in newMessageListener : {e}')
 
 # with client:
 #     client.run_until_disconnected()

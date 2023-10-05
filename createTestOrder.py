@@ -90,6 +90,8 @@ class Binance():
         except Exception as e:
             logger.error('FAILED TO SET LEVERAGE')
             logger.error(f'ERROR INDENTIFIED : {e}')
+            print("FAILED TO SET LEVERAGE")
+            print(f'ERROR INDENTIFIED : {e}')
             sys.exit()
 
     def set_margintype(self):
@@ -102,11 +104,15 @@ class Binance():
             time_end = time.time()
             time_logger.info(
                 f'TIME TAKEN TO SET MARGIN TYPE : {time_end-time_start}')
+            print(f'TIME TAKEN TO SET MARGIN TYPE : {time_end-time_start}')
             logger.info(f'MARGIN TYPE SET TO : {margin_type}')
+            print(f'MARGIN TYPE SET TO : {margin_type}')
 
         except Exception as e:
             logger.error('FAILED TO SET MARGIN TYPE')
+            print("FAILED TO SET MARGIN TYPE")
             logger.error(f'ERROR INDENTIFIED : {e}')
+            print(f'ERROR INDENTIFIED : {e}')
 
     # def get_quantity(self):
 
@@ -120,11 +126,14 @@ class Binance():
             self.client.futures_ping()
         except Exception as e:
             logger.error(f'FAILED TO PING BINANCE')
+            print("FAILED TO PING BINANCE")
             logger.error(f'ERROR INDENTIFIED : {e}')
+            print(f'ERROR INDENTIFIED : {e}')
             sys.exit()
 
     def buyMonitor(self, item_id, alert_bot):
         logger.info('THREAD STARTED')
+        print('THREAD STARTED')
         item = collections.find_one({"_id": item_id})
         entry_price = item['entry_price']
         quantity = item['quantity']
@@ -150,6 +159,7 @@ class Binance():
                 alert_bot.send_message(
                     self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
                 logger.info(f'ALL EXIT POINTS ACHIEVED')
+                print('ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
                 cancel_order = self.client.futures_cancel_all_open_orders(
@@ -163,6 +173,7 @@ class Binance():
                     self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
                 logger.info(
                     f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
+                print(f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(
                     self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                 collections.delete_one({"_id": item_id})
@@ -211,7 +222,9 @@ class Binance():
                 except Exception as e:
                     logger.error(
                         f'FAILED TO SELL AT EXIT POINT {current_index+1}')
+                    print(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
                     logger.error(f'ERROR INDENTIFIED : {e}')
+                    print(f'ERROR INDENTIFIED : {e}')
                     continue
 
                 cancel_order = self.client.futures_cancel_all_open_orders(
@@ -249,16 +262,22 @@ class Binance():
                         self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
                     logger.info(
                         f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                    print(
+                        f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
                 except Exception as e:
                     logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
+                    print("UNABLE TO PLACE STOPP LOSS ORDER")
                     logger.error(e)
+                    print(e)
 
                 collections.update_one(
                     {"_id": item_id}, {"$set": {"index": current_index}})
 
-                if sell_order and current_index != len(exit_prices):
+                if sell_order:
                     logger.info(f'EXIT POINT {current_index} ACHIEVED')
+                    print(f'EXIT POINT {current_index} ACHIEVED')
                     logger.info(f'SOLD at {current_price}')
+                    print(f'SOLD at {current_price}')
 
                 alert_bot.send_message(
                     self.user, f'EXIT POINT {current_index} ACHIEVED. SELLING {sell_quantity} {self.symbol} AT {current_price}')
@@ -277,7 +296,7 @@ class Binance():
                     self.um_futures_client.ticker_price(self.symbol)["price"])
 
             logger.info(f'CURRENT PRICE OF {self.symbol} is {current_price}')
-
+            print(f'CURRENT PRICE OF {self.symbol} is {current_price}')
             quantity = budget/current_price
 
             if quantity > 1:
@@ -289,6 +308,8 @@ class Binance():
 
             logger.info(
                 f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
+            print(
+                f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
                 symbol=self.symbol,
                 side='BUY',
@@ -298,9 +319,11 @@ class Binance():
             )
             logger.info(
                 f'ORDER PLACED : {order["orderId"]} at {current_price}')
+            print(f'ORDER PLACED : {order["orderId"]} at {current_price}')
             time_end = end_timer()
 
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_end}')
+            print(f'TIME TAKEN TO PLACE ORDER : {time_end}')
             self.data.add(self.symbol)
             self.data.update_last_processed_time(self.symbol)
 
@@ -314,6 +337,8 @@ class Binance():
                 stop_loss_price = round(entry_price - ((stop_loss_percentage / 100)
                                         * entry_price), price_precision.price_precision[self.symbol])
                 logger.info(
+                    f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
+                print(
                     f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
                 time_start = time.time()
                 while True:
@@ -332,16 +357,22 @@ class Binance():
                         logger.error(
                             "UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
                         logger.error(e)
+                        print("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
+                        print(e)
                         time.sleep(3)
                         continue
 
                 time_end = time.time()
                 time_logger.info(
                     f'TIME TAKEN TO PLACE STOP LOSS ORDER : {time_end-time_start}')
-
+                print(
+                    f'TIME TAKEN TO PLACE STOP LOSS ORDER : {time_end-time_start}')
                 logger.info(
                     f'ORDER PLACED : {order["orderId"]} at {entry_price}')
+                print(f'ORDER PLACED : {order["orderId"]} at {entry_price}')
                 logger.info(
+                    f'STOP LOSS ORDER PLACED : {stop_loss_order["orderId"]} at {stop_loss_price}')
+                print(
                     f'STOP LOSS ORDER PLACED : {stop_loss_order["orderId"]} at {stop_loss_price}')
 
                 # getting trade data ready
@@ -368,6 +399,8 @@ class Binance():
         except Exception as e:
             logger.error(f'FAILED TO PLACE AN ORDER')
             logger.error(f'ERROR INDENTIFIED : {e}')
+            print("FAILED TO PLACE AN ORDER")
+            print(f'ERROR INDENTIFIED : {e}')
             return
 
         for i in range(3):
@@ -383,10 +416,14 @@ class Binance():
                 if i == 2:
                     logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
                     logger.error(f'ERROR INDENTIFIED : {e}')
+                    print("FAILED TO SEND TELEGRAM MESSAGE")
+                    print(f'ERROR INDENTIFIED : {e}')
                 else:
                     logger.error(
                         f'FAILED TO SEND TELEGRAM MESSAGE. RETRYING...')
                     logger.error(f'ERROR INDENTIFIED : {e}')
+                    print("FAILED TO SEND TELEGRAM MESSAGE. RETRYING...")
+                    print(f'ERROR INDENTIFIED : {e}')
 
         # Insert the document into the collection
         item = collections.insert_one({
@@ -411,6 +448,7 @@ class Binance():
 
     def sellMonitor(self, item_id, alert_bot):
         logger.info('THREAD STARTED')
+        print('THREAD STARTED')
         item = collections.find_one({"_id": item_id})
         entry_price = item['entry_price']
         quantity = item['quantity']
@@ -434,6 +472,7 @@ class Binance():
                     self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
 
                 logger.info(f'ALL EXIT POINTS ACHIEVED')
+                print('ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
                 cancel_order = self.client.futures_cancel_all_open_orders(
@@ -446,6 +485,7 @@ class Binance():
 
                 logger.info(
                     f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
+                print(f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(
                     self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                 trades = self.client.futures_account_trades(
@@ -504,6 +544,8 @@ class Binance():
                     logger.error(
                         f'FAILED TO SELL AT EXIT POINT {current_index+1}')
                     logger.error(f'ERROR INDENTIFIED : {e}')
+                    print(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
+                    print(f'ERROR INDENTIFIED : {e}')
                     continue
 
                 cancel_order = self.client.futures_cancel_all_open_orders(
@@ -531,16 +573,22 @@ class Binance():
                         self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
                     logger.info(
                         f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                    print(
+                        f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
                 except Exception as e:
                     logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
                     logger.error(e)
+                    print("UNABLE TO PLACE STOPP LOSS ORDER")
+                    print(e)
 
                 collections.update_one(
                     {"_id": item_id}, {"$set": {"index": current_index}})
 
                 if sell_order:
                     logger.info(f'EXIT POINT {current_index} ACHIEVED')
+                    print(f'EXIT POINT {current_index} ACHIEVED')
                     logger.info(f'SOLD at {current_price}')
+                    print(f'SOLD at {current_price}')
 
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
@@ -585,6 +633,7 @@ class Binance():
                     self.um_futures_client.ticker_price(self.symbol)["price"])
 
             logger.info(f'CURRENT PRICE OF {self.symbol} is {current_price}')
+            print(f'CURRENT PRICE OF {self.symbol} is {current_price}')
 
             quantity = budget/current_price
 
@@ -597,6 +646,8 @@ class Binance():
 
             logger.info(
                 f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
+            print(
+                f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
                 symbol=self.symbol,
                 side='SELL',
@@ -606,6 +657,7 @@ class Binance():
             )
             time_taken = end_timer
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
+            print(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
 
             self.data.add(self.symbol)
 
@@ -624,6 +676,8 @@ class Binance():
 
                 logger.info(
                     f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
+                print(
+                    f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
                 while True:
                     try:
                         stop_loss_order = self.client.futures_create_order(
@@ -640,16 +694,23 @@ class Binance():
                         logger.error(
                             "UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
                         logger.error(e)
+                        print("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
+                        print(e)
                         time.sleep(3)
                         continue
 
                 time_end = time.time()
                 time_logger.info(
                     f'TIME TAKEN TO PLACE STOP LOSS ORDER : {time_end-time_start}')
+                print(
+                    f'TIME TAKEN TO PLACE STOP LOSS ORDER : {time_end-time_start}')
 
                 logger.info(
                     f'ORDER PLACED : {order["orderId"]} at {entry_price}')
+                print(f'ORDER PLACED : {order["orderId"]} at {entry_price}')
                 logger.info(
+                    f'STOP LOSS ORDER PLACED : {stop_loss_order["orderId"]} at {stop_loss_price}')
+                print(
                     f'STOP LOSS ORDER PLACED : {stop_loss_order["orderId"]} at {stop_loss_price}')
 
                 # getting trade data ready
@@ -676,6 +737,8 @@ class Binance():
         except Exception as e:
             logger.error(f'FAILED TO PLACE AN ORDER')
             logger.error(f'ERROR INDENTIFIED : {e}')
+            print("FAILED TO PLACE AN ORDER")
+            print(f'ERROR INDENTIFIED : {e}')
             return
 
         for i in range(3):
@@ -690,11 +753,15 @@ class Binance():
                 time.sleep(10)
                 if i == 2:
                     logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                    print("FAILED TO SEND TELEGRAM MESSAGE")
                     logger.error(f'ERROR INDENTIFIED : {e}')
+                    print(f'ERROR INDENTIFIED : {e}')
                 else:
                     logger.error(
                         f'FAILED TO SEND TELEGRAM MESSAGE. RETRYING...')
+                    print("FAILED TO SEND TELEGRAM MESSAGE. RETRYING...")
                     logger.error(f'ERROR INDENTIFIED : {e}')
+                    print(f'ERROR INDENTIFIED : {e}')
 
         item = collections.insert_one({
             'symbol': self.symbol[:-4],
