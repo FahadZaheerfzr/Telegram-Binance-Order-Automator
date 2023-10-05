@@ -1,5 +1,5 @@
 import time
-from telethon import TelegramClient, events
+#from telethon import TelegramClient, events
 from binance.client import Client
 import threading
 from configparser import ConfigParser
@@ -13,6 +13,7 @@ import telebot  # pip install pyTelegramBotAPI
 from timer import start_timer, end_timer
 from symbols import cryptocurrencies
 import re
+from pyrogram import Client as pyroClient, filters
 
 logger = setup_logger("telegram-listener")
 
@@ -62,7 +63,8 @@ ping_binance.start()
 
 print(excluded_symbols)
 
-client = TelegramClient(username, api_key, api_secret)
+#client = TelegramClient(username, api_key, api_secret)
+app = pyroClient(username, api_key, api_secret)
 
 
 def sell(symbol):
@@ -123,13 +125,13 @@ swingPattern = r'\bswing\b'
 #then go to line 167 and see the comment there
 
 
-@client.on(events.NewMessage(chats=user_input_channel))
-async def newMessageListener(event):
+@app.on_message(filters.chat(user_input_channel))
+async def newMessageListener(client, message):
     try:
-        logger.info(f'Time sent to telegram : {event.message.date}')
-        logger.info(f'Received new message : {event.message.message}')
+        logger.info(f'Time sent to telegram : {message.date}')
+        logger.info(f'Received new message : {message.text}')
         try:
-            newMessage = event.message.message
+            newMessage = message.text
             newMessage = newMessage.lower()
             symbol = newMessage.split("#")[1].split(" ")[0].upper()
         except Exception as e:
@@ -178,5 +180,7 @@ async def newMessageListener(event):
     except Exception as e:
         logger.error(f'Error in newMessageListener : {e}')
 
-with client:
-    client.run_until_disconnected()
+# with client:
+#     client.run_until_disconnected()
+
+app.run()

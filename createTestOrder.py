@@ -69,6 +69,8 @@ class Binance():
         except Exception as e:
             logger.error('FAILED TO INITIATE TRADE')
             logger.error(f'ERROR INDENTIFIED : {e}')
+            print("FAILED TO INITIATE TRADE")
+            print(f'ERROR INDENTIFIED : {e}')
             sys.exit()
 
     def set_leverage(self):
@@ -81,7 +83,9 @@ class Binance():
             time_end = time.time()
             time_logger.info(
                 f'TIME TAKEN TO SET LEVERAGE : {time_end-time_start}')
+            print(f'TIME TAKEN TO SET LEVERAGE : {time_end-time_start}')
             logger.info(f'LEVERAGE SET TO : {leverage}')
+            print(f'LEVERAGE SET TO : {leverage}')
 
         except Exception as e:
             logger.error('FAILED TO SET LEVERAGE')
@@ -126,7 +130,6 @@ class Binance():
         quantity = item['quantity']
         exit_prices = item['exit_points']
         stop_loss_price = item['stop_loss']
-        start_time = item['start_time']
         exit_target_quantity_list = item['exit_target_quantity_list']
         current_index = item['index']
         stop_loss_index = 0
@@ -395,7 +398,6 @@ class Binance():
             'stop_loss': stop_loss_price,
             'exit_points': exit_prices,
             'index': 0,
-            'start_time': start_time
         })
 
         # Monitor the price of the token
@@ -570,7 +572,6 @@ class Binance():
             #         continue
 
     def sell(self):
-        start_time = time.time()
         try:
             # setting desired margin type and leverage
             # self.set_leverage()
@@ -603,7 +604,7 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,
             )
-            time_taken = time.time() - start_time
+            time_taken = end_timer
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
 
             self.data.add(self.symbol)
