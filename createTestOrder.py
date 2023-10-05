@@ -261,7 +261,6 @@ class Binance():
                     self.user, f'EXIT POINT {current_index} ACHIEVED. SELLING {sell_quantity} {self.symbol} AT {current_price}')
 
     def buy(self):
-        start_time = time.time()
         try:
             # setting desired margin type and leverage
             # self.set_leverage()
@@ -296,9 +295,9 @@ class Binance():
             )
             logger.info(
                 f'ORDER PLACED : {order["orderId"]} at {current_price}')
-            time_end = time.time()
+            time_end = end_timer()
 
-            time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_end-start_time}')
+            time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_end}')
             self.data.add(self.symbol)
             self.data.update_last_processed_time(self.symbol)
 

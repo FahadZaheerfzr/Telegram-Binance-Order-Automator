@@ -1,11 +1,8 @@
 import time
 from telethon import TelegramClient, events
 from binance.client import Client
-import json
-import logging
 import threading
 from configparser import ConfigParser
-import asyncio
 from data import Data, PositionData
 from utils import setup_logger
 import createTestOrder
@@ -163,9 +160,11 @@ async def newMessageListener(event):
             # 'setup' in newMessage) or ('long' in newMessage and 'setup' in newMessage): use regex patterns
 
         if (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(longPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(highPattern, newMessage, re.IGNORECASE) and re.search(higherPattern, newMessage, re.IGNORECASE)) or (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(scalpPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(swingPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
+            start_timer()
             buy(symbol)
         # logic for selling
         elif (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(swingPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(swingPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(scalpPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(scalpPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
+            start_timer()
             sell(symbol)
         #here, lets say you added search for longlong in buyPattern and shortshort in sellPattern
         #then you can add this condition here :
