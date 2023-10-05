@@ -12,6 +12,10 @@ import price_precision
 from connection import DB
 from timer import end_timer
 import threading
+from configparser import ConfigParser
+
+config = ConfigParser()
+config.read('default_config.ini')
 
 # Read a variable called CONFIG from dotenv
 # This variable will contain the path to the configuration file
@@ -24,6 +28,7 @@ logger = setup_logger("binance-order")
 collections = DB["collections"]  # Replace with your collection name
 
 SYMBOLS = SYMBOLS.split(',')
+Stoploss_To_Entry= config.getboolean('Binance', 'STOPLOSS_TO_ENTRY')
 
 
 class Binance():
@@ -216,7 +221,7 @@ class Binance():
                 alert_bot.send_message(
                     self.user, f'PNL : {pnl["realizedPnl"]}')
                 if current_index % self.stop_loss_levels == 0 and current_index != 0:
-                    if stop_loss_index == 0:
+                    if stop_loss_index == 0 or Stoploss_To_Entry:
                         stop_loss_price = entry_price
                         stop_loss_index += 1
                     else:
@@ -256,7 +261,7 @@ class Binance():
                     self.user, f'EXIT POINT {current_index} ACHIEVED. SELLING {sell_quantity} {self.symbol} AT {current_price}')
 
     def buy(self):
-        start_time = time.time_ns()
+        start_time = time.time()
         try:
             # setting desired margin type and leverage
             # self.set_leverage()
@@ -291,9 +296,9 @@ class Binance():
             )
             logger.info(
                 f'ORDER PLACED : {order["orderId"]} at {current_price}')
-            time_taken = end_timer()
+            time_end = time.time()
 
-            time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
+            time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_end-start_time}')
             self.data.add(self.symbol)
             self.data.update_last_processed_time(self.symbol)
 
@@ -503,7 +508,7 @@ class Binance():
                 cancel_order = self.client.futures_cancel_all_open_orders(
                     symbol=self.symbol, recvWindow=60000)
                 if current_index % self.stop_loss_levels == 0 and current_index != 0:
-                    if stop_loss_index == 0:
+                    if stop_loss_index == 0 or Stoploss_To_Entry:
                         stop_loss_price = entry_price
                         stop_loss_index += 1
                     else:
@@ -566,6 +571,7 @@ class Binance():
             #         continue
 
     def sell(self):
+        start_time = time.time()
         try:
             # setting desired margin type and leverage
             # self.set_leverage()
@@ -598,7 +604,7 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,
             )
-            time_taken = end_timer()
+            time_taken = time.time() - start_time
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
 
             self.data.add(self.symbol)
