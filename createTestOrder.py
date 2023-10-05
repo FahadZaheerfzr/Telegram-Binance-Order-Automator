@@ -214,7 +214,7 @@ class Binance():
 
                 pnl = trades[-1]
                 alert_bot.send_message(
-                    self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                    self.user, f'PNL : {pnl["realizedPnl"]}')
                 if current_index % self.stop_loss_levels == 0 and current_index != 0:
                     if stop_loss_index == 0:
                         stop_loss_price = entry_price
@@ -225,7 +225,6 @@ class Binance():
                 stop_loss_price = round(
                     stop_loss_price, price_precision.price_precision[self.symbol])
 
-                logger.info(f'EXIT POINT {current_index+1} ACHIEVED')
                 try:
                     updated_stop_loss = self.client.futures_create_order(
                         symbol=self.symbol,
@@ -483,7 +482,7 @@ class Binance():
                             recvWindow=60000,
                             reduceOnly=True,
                         )
-
+                        current_index += 1
                         cancel_order = self.client.futures_cancel_all_open_orders(
                             symbol=self.symbol, recvWindow=60000)
                     else:
@@ -542,11 +541,10 @@ class Binance():
 
                 pnl = trades[-1]
                 alert_bot.send_message(
-                    self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                    self.user, f'PNL : {pnl["realizedPnl"]}')
 
                 alert_bot.send_message(
                     self.user, f'EXIT POINT {current_index} ACHIEVED. BUYING {sell_quantity} {self.symbol} AT {current_price}.')
-                logger.info(f'EXIT POINT {current_index} ACHIEVED')
 
             # elif current_price <= stop_loss_price:
             #     logger.info(f'STOP LOSS ACHIEVED')
