@@ -135,7 +135,7 @@ async def newMessageListener(client, message):
         logger.info(f'Received new message : {message.text}')
         print(f'Received new message : {message.text}')
         try:
-            newMessage = message.text
+            newMessage = message.caption if message.media and message.caption else message.text
             newMessage = newMessage.lower()
             symbol = newMessage.split("#")[1].split(" ")[0].upper()
         except Exception as e:
