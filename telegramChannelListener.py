@@ -132,8 +132,9 @@ async def newMessageListener(client, message):
     try:
         logger.info(f'Time sent to telegram : {message.date}')
         print(f'Time sent to telegram : {message.date}')
-        logger.info(f'Received new message : {message.text}')
-        print(f'Received new message : {message.text}')
+        content = message.caption if message.media and message.caption else message.text
+        logger.info(f'Received new message : {content}')
+        print(f'Received new message : {content}')
         try:
             newMessage = message.caption if message.media and message.caption else message.text
             newMessage = newMessage.lower()
