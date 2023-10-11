@@ -34,6 +34,11 @@ binance_api_key = config.get('Binance', 'BINANCE_API_KEY')
 binance_api_secret = config.get('Binance', 'BINANCE_API_SECRET')
 mode = config.get('Binance', 'MODE')
 CoolDownTime = config.get('Binance', 'COOLDOWN_TIME')
+CounterTradeTicker = config.get('Binance', 'COUNTER_TRADE_TICKER')
+CounterTradeTickerPercentage = config.get(
+    'Binance', 'COUNTER_TRADE_TICKER_PERCENTAGE')
+CounterTradeTickerTimer = config.get(
+    'Binance', 'COUNTER_TRADE_TICKER_TIMER')
 
 if mode == 'LIVE':
     binance_client = Client(binance_api_key, binance_api_secret)
