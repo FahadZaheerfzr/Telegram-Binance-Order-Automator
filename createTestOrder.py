@@ -322,9 +322,16 @@ class Binance():
                 f'ORDER PLACED : {order["orderId"]} at {current_price}')
             print(f'ORDER PLACED : {order["orderId"]} at {current_price}')
             time_end = end_timer()
+
+            
             if CounterTradeTicker:
                 current_time = time.time()
-                monitorPriceBuy(self.symbol, current_time)
+                s_thread = threading.Thread(
+                    target=monitorPriceBuy, args=(self.symbol, current_time,))
+                s_thread.daemon = True
+                s_thread.start()
+            
+
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_end}')
             print(f'TIME TAKEN TO PLACE ORDER : {time_end}')
             self.data.add(self.symbol)
@@ -506,9 +513,8 @@ class Binance():
 
             current_price = self.price_data.price_data[cryptocurrencies.index(
                 self.symbol)]
-            if CounterTradeTicker:
-                current_time = time.time()
-                monitorPriceSell(self.symbol, current_time)
+            
+ 
             if current_price <= exit_prices[current_index]:
                 sell_quantity = (
                     int(exit_target_quantity_list[current_index])/100)*quantity
@@ -653,6 +659,7 @@ class Binance():
                 f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
             print(
                 f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
+            
             order = self.client.futures_create_order(
                 symbol=self.symbol,
                 side='SELL',
@@ -660,6 +667,15 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,
             )
+
+
+            if CounterTradeTicker:
+                current_time = time.time()
+                s_thread = threading.Thread(
+                    target=monitorPriceSell, args=(self.symbol, current_time,))
+                s_thread.daemon = True
+                s_thread.start()
+            
             time_taken = end_timer
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
             print(f'TIME TAKEN TO PLACE ORDER : {time_taken}')
