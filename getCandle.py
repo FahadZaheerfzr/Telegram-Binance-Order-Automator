@@ -7,7 +7,6 @@ from configparser import ConfigParser
 from price_precision import price_precision
 from binance.client import Client
 from binance.um_futures import UMFutures
-from telegramChannelListener import buy, sell
 import time
 
 
@@ -44,9 +43,9 @@ def getCandle(symbol):
     return candle[0][3]
 
 # function to monitor price and send alert
-def monitorPriceBuy(symbol,currentTime):
+def monitorPriceBuy(symbol,currentTime,sell):
     # get candle data
-    candle = float(getCandle(symbol))
+    candle = float(getCandle(symbol+"USDT"))
     # multiply with percentage and add to candle low
 
     price = candle + (candle * float(CounterTradeTickerPercentage)/100 )
@@ -54,7 +53,7 @@ def monitorPriceBuy(symbol,currentTime):
     # check if candle low is less than price
     while True:
         # get current price
-        currentPrice=float(um_futures_client.ticker_price(symbol)["price"])
+        currentPrice=float(um_futures_client.ticker_price(symbol+"USDT")["price"])
         if currentPrice <= price:
             # send alert
             sell(symbol)
@@ -62,7 +61,7 @@ def monitorPriceBuy(symbol,currentTime):
         if (time.time() - currentTime) > float(CounterTradeTickerTimer):
             break
 
-def monitorPriceSell(symbol,currentTime):
+def monitorPriceSell(symbol,currentTime,sell):
     # get candle data
     candle = float(getCandle(symbol))
     # multiply with percentage and add to candle low
