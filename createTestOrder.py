@@ -324,12 +324,12 @@ class Binance():
             time_end = end_timer()
 
             
-            if CounterTradeTicker:
-                current_time = time.time()
-                s_thread = threading.Thread(
-                    target=monitorPriceBuy, args=(self.symbol, current_time,))
-                s_thread.daemon = True
-                s_thread.start()
+            # if CounterTradeTicker:
+            #     current_time = time.time()
+            #     s_thread = threading.Thread(
+            #         target=monitorPriceBuy, args=(self.symbol, current_time,))
+            #     s_thread.daemon = True
+            #     s_thread.start()
             
 
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_end}')
@@ -669,12 +669,12 @@ class Binance():
             )
 
 
-            if CounterTradeTicker:
-                current_time = time.time()
-                s_thread = threading.Thread(
-                    target=monitorPriceSell, args=(self.symbol, current_time,))
-                s_thread.daemon = True
-                s_thread.start()
+            # if CounterTradeTicker:
+            #     current_time = time.time()
+            #     s_thread = threading.Thread(
+            #         target=monitorPriceSell, args=(self.symbol, current_time,))
+            #     s_thread.daemon = True
+            #     s_thread.start()
             
             time_taken = end_timer
             time_logger.info(f'TIME TAKEN TO PLACE ORDER : {time_taken}')

@@ -14,7 +14,7 @@ from timer import start_timer, end_timer
 from symbols import cryptocurrencies
 import re
 from pyrogram import Client as pyroClient, filters
-
+from getCandle import monitorPriceBuy, monitorPriceSell
 logger = setup_logger("telegram-listener")
 
 
@@ -34,7 +34,7 @@ binance_api_key = config.get('Binance', 'BINANCE_API_KEY')
 binance_api_secret = config.get('Binance', 'BINANCE_API_SECRET')
 mode = config.get('Binance', 'MODE')
 CoolDownTime = config.get('Binance', 'COOLDOWN_TIME')
-CounterTradeTicker = config.get('Binance', 'COUNTER_TRADE_TICKER')
+CounterTradeTicker = config.getboolean('Binance', 'COUNTER_TRADE_TICKER')
 CounterTradeTickerPercentage = config.get(
     'Binance', 'COUNTER_TRADE_TICKER_PERCENTAGE')
 CounterTradeTickerTimer = config.get(
@@ -145,7 +145,7 @@ async def newMessageListener(client, message):
             newMessage = newMessage.lower()
             symbol = newMessage.split("#")[1].split(" ")[0].upper()
         except Exception as e:
-            print(e)
+            print(e, "error in getting symbol")
             return
 
         # Check if enough time has passed since the last processing of this symbol
@@ -176,11 +176,19 @@ async def newMessageListener(client, message):
 
         if (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(longPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(highPattern, newMessage, re.IGNORECASE) and re.search(higherPattern, newMessage, re.IGNORECASE)) or (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(scalpPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(swingPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
             start_timer()
-            buy(symbol)
+            if CounterTradeTicker:
+                currentTime = time.time()
+                monitorPriceBuy(symbol, currentTime,sell)
+            else:
+                buy(symbol)
         # logic for selling
         elif (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(swingPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(swingPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(sellPattern, newMessage, re.IGNORECASE) and re.search(scalpPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)) or (re.search(shortPattern, newMessage, re.IGNORECASE) and re.search(scalpPattern, newMessage, re.IGNORECASE) and re.search(setupPattern, newMessage, re.IGNORECASE)):
             start_timer()
-            sell(symbol)
+            if CounterTradeTicker:
+                currentTime = time.time()
+                monitorPriceSell(symbol, currentTime,buy)
+            else:
+                sell(symbol)
         #here, lets say you added search for longlong in buyPattern and shortshort in sellPattern
         #then you can add this condition here :
         #elif (re.search(buyPattern, newMessage, re.IGNORECASE) and re.search(longlongPattern, newMessage, re.IGNORECASE)):
