@@ -55,8 +55,8 @@ def monitorPriceBuy(symbol,currentTime,sell):
     # multiply with percentage and add to candle low
 
     price = candle + (candle * float(CounterTradeTickerPercentage)/100 )
-    loggerBuy.info("price: %s",price)
-    print("price: ",price)
+    loggerBuy.info("Trigger price: %s",price)
+    print("Trigger price: ",price)
     # check if candle low is less than price
     while True:
         # get current price
@@ -79,8 +79,8 @@ def monitorPriceSell(symbol,currentTime,buy):
     # multiply with percentage and add to candle low
 
     price = candle - (candle * float(CounterTradeTickerPercentage)/100 )
-    loggerSell.info("price: %s",price)
-    print("price: ",price)
+    loggerSell.info("Trigger price: %s",price)
+    print("Trigger price: ",price)
     # check if candle low is less than price
     while True:
         # get current price

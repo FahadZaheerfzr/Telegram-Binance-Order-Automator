@@ -156,9 +156,17 @@ class Binance():
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
                 pnl = trades[-1]
-
-                alert_bot.send_message(
-                    self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                for _ in range(3):
+                    try:
+                        alert_bot.send_message(
+                            self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                        break
+                    except Exception as e:
+                        logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                        logger.error(f'ERROR INDENTIFIED : {e}')
+                        print("FAILED TO SEND TELEGRAM MESSAGE")
+                        print(f'ERROR INDENTIFIED : {e}')
+                        time.sleep(10)
                 logger.info(f'ALL EXIT POINTS ACHIEVED')
                 print('ALL EXIT POINTS ACHIEVED')
                 self.data.remove(self.symbol)
@@ -166,17 +174,37 @@ class Binance():
                 cancel_order = self.client.futures_cancel_all_open_orders(
                     symbol=self.symbol, recvWindow=60000)
                 sys.exit()
+
             if positionClosed == True:
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
                 pnl = trades[-1]
-                alert_bot.send_message(
-                    self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                for _ in range(3):
+                    try:
+                        alert_bot.send_message(
+                            self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                        break
+                    except Exception as e:
+                        logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                        logger.error(f'ERROR INDENTIFIED : {e}')
+                        print("FAILED TO SEND TELEGRAM MESSAGE")
+                        print(f'ERROR INDENTIFIED : {e}')
+                        time.sleep(10)
                 logger.info(
                     f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
                 print(f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
-                alert_bot.send_message(
-                    self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
+                for _ in range(3):
+                    try:
+                        alert_bot.send_message(
+                            self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
+                        break
+                    except Exception as e:
+                        logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                        logger.error(f'ERROR INDENTIFIED : {e}')
+                        print("FAILED TO SEND TELEGRAM MESSAGE")
+                        print(f'ERROR INDENTIFIED : {e}')
+                        time.sleep(10)
+
                 collections.delete_one({"_id": item_id})
                 self.data.remove(self.symbol)
                 cancel_order = self.client.futures_cancel_all_open_orders(
@@ -300,12 +328,8 @@ class Binance():
             print(f'CURRENT PRICE OF {self.symbol} is {current_price}')
             quantity = budget/current_price
 
-            if quantity > 1:
-                quantity = int(quantity)  # if it is 1.14324 return 1
-            else:
-                # if it is 0.95435 return 0.954
-                quantity = float(
-                    round(quantity, price_precision.quantity_precision[self.symbol]))
+
+            quantity = float(round(quantity, price_precision.quantity_precision[self.symbol]))
 
             logger.info(
                 f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
