@@ -10,3 +10,5 @@ config.ini
 changes.txt
 
 /data
+*.session
+*.session-journal

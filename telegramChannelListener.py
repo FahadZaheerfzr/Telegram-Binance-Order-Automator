@@ -178,6 +178,7 @@ async def newMessageListener(client, message):
             start_timer()
             if CounterTradeTicker:
                 currentTime = time.time()
+                logger.info(f'CounterTradeTicker is True buy')
                 monitorPriceBuy(symbol, currentTime,sell)
             else:
                 buy(symbol)
@@ -186,6 +187,7 @@ async def newMessageListener(client, message):
             start_timer()
             if CounterTradeTicker:
                 currentTime = time.time()
+                logger.info(f'CounterTradeTicker is True sell')
                 monitorPriceSell(symbol, currentTime,buy)
             else:
                 sell(symbol)
