@@ -8,10 +8,14 @@ from price_precision import price_precision
 from binance.client import Client
 from binance.um_futures import UMFutures
 import time
+from utils import setup_logger
 
 
 config = ConfigParser()
 config.read('default_config.ini')
+loggerCandle = setup_logger("getCandle")
+loggerBuy = setup_logger("Monitor-buy")
+loggerSell = setup_logger("Monitor-sell")
 
 mode = config.get('Binance', 'MODE')
 binance_api_key = config.get('Binance', 'BINANCE_API_KEY')
@@ -39,6 +43,7 @@ URL = f'{BASE_URL}/stream?streams=btcusdt@kline_1m'
 def getCandle(symbol):
     # api call to get candle data
     candle = binance_client.futures_klines(symbol=symbol, interval='1m', limit=1)
+    loggerCandle.info("candle: %s",candle)
     print(candle,"low: ",candle[0][3])
     return candle[0][3]
 
@@ -49,30 +54,36 @@ def monitorPriceBuy(symbol,currentTime,sell):
     # multiply with percentage and add to candle low
 
     price = candle + (candle * float(CounterTradeTickerPercentage)/100 )
+    loggerBuy.info("price: %s",price)
     print("price: ",price)
     # check if candle low is less than price
     while True:
         # get current price
         currentPrice=float(um_futures_client.ticker_price(symbol+"USDT")["price"])
+        loggerBuy.info("currentPrice: %s",currentPrice)
         if currentPrice <= price:
             # send alert
+            loggerBuy.info("buy - currentPrice: %s - priceToSell: %s",currentPrice,price)
             sell(symbol)
             break
         if (time.time() - currentTime) > float(CounterTradeTickerTimer):
             break
 
-def monitorPriceSell(symbol,currentTime,sell):
+def monitorPriceSell(symbol,currentTime,buy):
     # get candle data
     candle = float(getCandle(symbol))
     # multiply with percentage and add to candle low
 
     price = candle - (candle * float(CounterTradeTickerPercentage)/100 )
+    loggerSell.info("price: %s",price)
     print("price: ",price)
     # check if candle low is less than price
     while True:
         # get current price
         currentPrice=float(um_futures_client.ticker_price(symbol)["price"])
+        loggerSell.info("currentPrice: %s",currentPrice)
         if currentPrice >= price:
+            loggerSell.info("sell - currentPrice: %s - priceToSell: %s",currentPrice,price)
             # send alert
             buy(symbol)
             break
