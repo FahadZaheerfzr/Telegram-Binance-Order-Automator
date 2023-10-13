@@ -11,3 +11,4 @@ changes.txt
 
 /data
 *.session
+*.session-journal
