@@ -44,6 +44,7 @@ def getCandle(symbol):
     # api call to get candle data
     candle = binance_client.futures_klines(symbol=symbol, interval='1m', limit=1)
     loggerCandle.info("candle: %s",candle)
+    loggerCandle.info("low: %s", candle[0][3])
     print(candle,"low: ",candle[0][3])
     return candle[0][3]
 
