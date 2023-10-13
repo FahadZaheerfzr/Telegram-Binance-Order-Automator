@@ -10,3 +10,4 @@ config.ini
 changes.txt
 
 /data
+*.session
