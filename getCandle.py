@@ -38,7 +38,7 @@ else:
     binance_client = Client(binance_api_key, binance_api_secret, testnet=True)
 URL = f'{BASE_URL}/stream?streams=btcusdt@kline_1m'
 
-
+price_data = PriceData()
 # function to make api call and get candle data without socket
 def getCandle(symbol):
     # api call to get candle data
@@ -59,8 +59,11 @@ def monitorPriceBuy(symbol,currentTime,sell):
     # check if candle low is less than price
     while True:
         # get current price
-        currentPrice=float(um_futures_client.ticker_price(symbol+"USDT")["price"])
-        loggerBuy.info("currentPrice: %s",currentPrice)
+
+        try:
+            currentPrice = price_data.price_data[cryptocurrencies.index(symbol+"USDT")]
+        except Exception as e:
+            currentPrice = float(um_futures_client.ticker_price(symbol+"USDT")["price"])
         if currentPrice >= price:
             # send alert
             loggerBuy.info("buy - currentPrice: %s - priceToSell: %s",currentPrice,price)
@@ -80,8 +83,11 @@ def monitorPriceSell(symbol,currentTime,buy):
     # check if candle low is less than price
     while True:
         # get current price
-        currentPrice=float(um_futures_client.ticker_price(symbol)["price"])
-        loggerSell.info("currentPrice: %s",currentPrice)
+        try:
+            currentPrice = price_data.price_data[cryptocurrencies.index(symbol+"USDT")]
+        except Exception as e:
+            currentPrice = float(um_futures_client.ticker_price(symbol+"USDT")["price"])
+        
         if currentPrice < price:
             loggerSell.info("sell - currentPrice: %s - priceToSell: %s",currentPrice,price)
             # send alert
