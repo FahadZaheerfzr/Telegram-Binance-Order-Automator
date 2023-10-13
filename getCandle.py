@@ -61,7 +61,7 @@ def monitorPriceBuy(symbol,currentTime,sell):
         # get current price
         currentPrice=float(um_futures_client.ticker_price(symbol+"USDT")["price"])
         loggerBuy.info("currentPrice: %s",currentPrice)
-        if currentPrice <= price:
+        if currentPrice >= price:
             # send alert
             loggerBuy.info("buy - currentPrice: %s - priceToSell: %s",currentPrice,price)
             sell(symbol)
@@ -82,7 +82,7 @@ def monitorPriceSell(symbol,currentTime,buy):
         # get current price
         currentPrice=float(um_futures_client.ticker_price(symbol)["price"])
         loggerSell.info("currentPrice: %s",currentPrice)
-        if currentPrice >= price:
+        if currentPrice < price:
             loggerSell.info("sell - currentPrice: %s - priceToSell: %s",currentPrice,price)
             # send alert
             buy(symbol)
