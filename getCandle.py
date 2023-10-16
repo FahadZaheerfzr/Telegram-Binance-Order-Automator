@@ -66,7 +66,7 @@ def monitorPriceBuy(symbol,currentTime,sell):
         except Exception as e:
             currentPrice = float(um_futures_client.ticker_price(symbol+"USDT")["price"])
         
-        print (currentPrice,price,time.time()-currentTime)
+        # print (currentPrice,price,time.time()-currentTime)
         if currentPrice >= price:
             # send alert
             loggerBuy.info("buy - currentPrice: %s - priceToSell: %s",currentPrice,price)
