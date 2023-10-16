@@ -331,8 +331,8 @@ class Binance():
 
             quantity = float(round(quantity, price_precision.quantity_precision[self.symbol]))
 
-            logger.info(
-                f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
+            # logger.info(
+            #     f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
             print(
                 f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
             order = self.client.futures_create_order(
@@ -679,8 +679,8 @@ class Binance():
                 quantity = float(
                     round(quantity, price_precision.quantity_precision[self.symbol]))
 
-            logger.info(
-                f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
+            # logger.info(
+            #     f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
             print(
                 f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
             

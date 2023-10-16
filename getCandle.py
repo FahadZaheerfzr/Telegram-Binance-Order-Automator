@@ -65,17 +65,20 @@ def monitorPriceBuy(symbol,currentTime,sell):
             currentPrice = price_data.price_data[cryptocurrencies.index(symbol+"USDT")]
         except Exception as e:
             currentPrice = float(um_futures_client.ticker_price(symbol+"USDT")["price"])
+        
+        print (currentPrice,price,time.time()-currentTime)
         if currentPrice >= price:
             # send alert
             loggerBuy.info("buy - currentPrice: %s - priceToSell: %s",currentPrice,price)
             sell(symbol)
             break
-        if (time.time() - currentTime) > float(CounterTradeTickerTimer):
+        if (time.time() - currentTime) > float(CounterTradeTickerTimer)*60:
+            print ("break")
             break
 
 def monitorPriceSell(symbol,currentTime,buy):
     # get candle data
-    candle = float(getCandle(symbol))
+    candle = float(getCandle(symbol+"USDT"))
     # multiply with percentage and add to candle low
 
     price = candle - (candle * float(CounterTradeTickerPercentage)/100 )
@@ -94,7 +97,7 @@ def monitorPriceSell(symbol,currentTime,buy):
             # send alert
             buy(symbol)
             break
-        if (time.time() - currentTime) > float(CounterTradeTickerTimer):
+        if (time.time() - currentTime) > float(CounterTradeTickerTimer)*60:
             break
             
 
