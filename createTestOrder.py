@@ -143,6 +143,7 @@ class Binance():
         exit_target_quantity_list = item['exit_target_quantity_list']
         current_index = item['index']
         stop_loss_index = 0
+        pnl = 0
         while True:
             time.sleep(0.2)
             current_price = float(
@@ -155,11 +156,12 @@ class Binance():
             if current_index == len(exit_prices):
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
-                pnl = trades[-1]
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"]) + pnl
                 for _ in range(3):
                     try:
                         alert_bot.send_message(
-                            self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                            self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
                         break
                     except Exception as e:
                         logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
@@ -178,11 +180,12 @@ class Binance():
             if positionClosed == True:
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
-                pnl = trades[-1]
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"]) + pnl
                 for _ in range(3):
                     try:
                         alert_bot.send_message(
-                            self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                            self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
                         break
                     except Exception as e:
                         logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
@@ -262,9 +265,10 @@ class Binance():
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
 
-                pnl = trades[-1]
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"]) + pnl
                 alert_bot.send_message(
-                    self.user, f'PNL : {pnl["realizedPnl"]}')
+                    self.user, f'CURRENT PNL : {pnl}')
                 if current_index % self.stop_loss_levels == 0 and current_index != 0:
                     if stop_loss_index == 0 or Stoploss_To_Entry:
                         stop_loss_price = entry_price
@@ -491,6 +495,7 @@ class Binance():
         exit_target_quantity_list = item['exit_target_quantity_list']
         current_index = item['index']
         stop_loss_index = 0
+        pnl = 0
         while True:
             time.sleep(0.2)
 
@@ -501,9 +506,10 @@ class Binance():
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
 
-                pnl = trades[-1]
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"]) + pnl
                 alert_bot.send_message(
-                    self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                    self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
 
                 logger.info(f'ALL EXIT POINTS ACHIEVED')
                 print('ALL EXIT POINTS ACHIEVED')
@@ -525,9 +531,10 @@ class Binance():
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
 
-                pnl = trades[-1]
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"]) + pnl
                 alert_bot.send_message(
-                    self.user, f'POSITION CLOSED. PNL : {pnl["realizedPnl"]}')
+                    self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
                 self.data.remove(self.symbol)
                 collections.delete_one({"_id": item_id})
                 cancel_order = self.client.futures_cancel_all_open_orders(
@@ -628,9 +635,10 @@ class Binance():
                 trades = self.client.futures_account_trades(
                     symbol=self.symbol, recvWindow=60000)
 
-                pnl = trades[-1]
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"]) + pnl
                 alert_bot.send_message(
-                    self.user, f'PNL : {pnl["realizedPnl"]}')
+                    self.user, f'CURRENT PNL : {pnl}')
 
                 alert_bot.send_message(
                     self.user, f'EXIT POINT {current_index} ACHIEVED. BUYING {sell_quantity} {self.symbol} AT {current_price}.')
