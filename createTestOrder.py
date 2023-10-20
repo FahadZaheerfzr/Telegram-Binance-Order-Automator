@@ -154,13 +154,12 @@ class Binance():
             # positions = PositionData.position_data
 
             if current_index == len(exit_prices):
-                # trades = self.client.futures_account_trades(
-                #     symbol=self.symbol, recvWindow=60000)
-                # # acc to current index we will sum up the pnl in trades from the end of trades
-                # pnl = 0
-                # for i in range(current_index):
-                #     pnlNew = trades[-1-i]
-                #     pnl = float(pnlNew["realizedPnl"]) + pnl
+                trades = self.client.futures_account_trades(
+                    symbol=self.symbol, recvWindow=60000)
+
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"])
+                lastpnl= pnl + lastpnl
 
                 for _ in range(3):
                     try:
@@ -182,12 +181,12 @@ class Binance():
                 sys.exit()
 
             if positionClosed == True:
-                # trades = self.client.futures_account_trades(
-                #     symbol=self.symbol, recvWindow=60000)
-                # pnl = 0
-                # for i in range(current_index):
-                #     pnlNew = trades[-1-i]
-                #     pnl = float(pnlNew["realizedPnl"]) + pnl
+                trades = self.client.futures_account_trades(
+                    symbol=self.symbol, recvWindow=60000)
+
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"])
+                lastpnl= pnl + lastpnl
                 for _ in range(3):
                     try:
                         alert_bot.send_message(
@@ -524,12 +523,12 @@ class Binance():
                 self.symbol)]  # get position data from position_data.py
 
             if current_index == len(exit_prices):
-                # trades = self.client.futures_account_trades(
-                #     symbol=self.symbol, recvWindow=60000)
+                trades = self.client.futures_account_trades(
+                    symbol=self.symbol, recvWindow=60000)
 
-                # pnlNew = trades[-1]
-                # pnl = float(pnlNew["realizedPnl"])
-                # print (pnl,'pnl')
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"])
+                lastpnl= pnl + lastpnl
                 alert_bot.send_message(
                     self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
 
@@ -549,11 +548,12 @@ class Binance():
                 print(f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                 alert_bot.send_message(
                     self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
-                # trades = self.client.futures_account_trades(
-                #     symbol=self.symbol, recvWindow=60000)
+                trades = self.client.futures_account_trades(
+                    symbol=self.symbol, recvWindow=60000)
 
-                # pnlNew = trades[-1]
-                # pnl = float(pnlNew["realizedPnl"]) 
+                pnlNew = trades[-1]
+                pnl = float(pnlNew["realizedPnl"]) 
+                lastpnl= pnl + lastpnl
                 alert_bot.send_message(
                     self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
                 self.data.remove(self.symbol)
