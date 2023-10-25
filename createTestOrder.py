@@ -35,7 +35,8 @@ CounterTradeTicker = config.getboolean('Binance', 'COUNTER_TRADE_TICKER')
 class Binance():
 
     def __init__(self, symbol, binance_client):
-
+    
+        self.total_pnl = 0
         self.price_data = PriceData()
         self.position_data = PositionData()
         try:
@@ -144,28 +145,26 @@ class Binance():
             exit_target_quantity_list = item['exit_target_quantity_list']
             current_index = item['index']
             stop_loss_index = 0
-            lastpnl = 0
+            pnl = 0
             while True:
                 time.sleep(0.2)
                 current_price = float(
                     self.um_futures_client.ticker_price(self.symbol)["price"])
                 positionClosed = self.position_data.position_data[cryptocurrencies.index(
                     self.symbol)]  # get position data from position_data.py
-                # print (current_price)
+
                 # positions = PositionData.position_data
 
                 if current_index == len(exit_prices):
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
-
                     pnlNew = trades[-1]
-                    pnl = float(pnlNew["realizedPnl"])
-                    lastpnl= pnl + lastpnl
-
+                    pnl = float(pnlNew["realizedPnl"]) + pnl
+                    self.total_pnl += pnl  # Update the total PNL here
                     for _ in range(3):
                         try:
                             alert_bot.send_message(
-                                self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                                self.user, f'POSITION CLOSED, FINAL PNL : {self.total_pnl}')
                             break
                         except Exception as e:
                             logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
@@ -184,14 +183,13 @@ class Binance():
                 if positionClosed == True:
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
-
                     pnlNew = trades[-1]
-                    pnl = float(pnlNew["realizedPnl"])
-                    lastpnl= pnl + lastpnl
+                    pnl = float(pnlNew["realizedPnl"]) + pnl
+                    self.total_pnl += pnl  # Update the total PNL here
                     for _ in range(3):
                         try:
                             alert_bot.send_message(
-                                self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                                self.user, f'POSITION CLOSED, FINAL PNL : {self.total_pnl}')
                             break
                         except Exception as e:
                             logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
@@ -268,9 +266,47 @@ class Binance():
                     cancel_order = self.client.futures_cancel_all_open_orders(
                         symbol=self.symbol, recvWindow=60000)
 
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
 
+                    pnlNew = trades[-1]
+                    pnl = float(pnlNew["realizedPnl"]) + pnl
+                    self.total_pnl += pnl  # Update the total PNL here
+                    alert_bot.send_message(
+                        self.user, f'CURRENT PNL : {pnl}, TOTAL PNL : {self.total_pnl}')
+                    if current_index % self.stop_loss_levels == 0 and current_index != 0:
+                        if stop_loss_index == 0 or Stoploss_To_Entry:
+                            stop_loss_price = entry_price
+                            stop_loss_index += 1
+                        else:
+                            stop_loss_price = exit_prices[stop_loss_index-1]
 
+                    stop_loss_price = round(
+                        stop_loss_price, price_precision.price_precision[self.symbol])
 
+                    try:
+                        updated_stop_loss = self.client.futures_create_order(
+                            symbol=self.symbol,
+                            side='SELL',
+                            type='STOP_MARKET',
+                            quantity=sell_quantity,
+                            stopPrice=stop_loss_price,
+                            recvWindow=60000,
+                            reduceOnly=True,
+                        )
+                        collections.update_one(
+                            {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
+                        alert_bot.send_message(
+                            self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                        logger.info(
+                            f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                        print(
+                            f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                    except Exception as e:
+                        logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
+                        print("UNABLE TO PLACE STOPP LOSS ORDER")
+                        logger.error(e)
+                        print(e)
 
                     collections.update_one(
                         {"_id": item_id}, {"$set": {"index": current_index}})
@@ -283,61 +319,13 @@ class Binance():
 
                     alert_bot.send_message(
                         self.user, f'EXIT POINT {current_index} ACHIEVED. SELLING {sell_quantity} {self.symbol} AT {current_price}')
-                    
-                    if current_index % self.stop_loss_levels == 0 and current_index != 0:
-                        if stop_loss_index == 0 or Stoploss_To_Entry:
-                            stop_loss_price = entry_price
-                            stop_loss_index += 1
-                        else:
-                            stop_loss_price = exit_prices[stop_loss_index-1]
-
-                    stop_loss_price = round(
-                        stop_loss_price, price_precision.price_precision[self.symbol])
-
-                    for i in range (3):
-                        try:
-                            updated_stop_loss = self.client.futures_create_order(
-                                symbol=self.symbol,
-                                side='SELL',
-                                type='STOP_MARKET',
-                                quantity=sell_quantity,
-                                stopPrice=stop_loss_price,
-                                recvWindow=60000,
-                                reduceOnly=True,
-                            )
-                            collections.update_one(
-                                {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
-                            alert_bot.send_message(
-                                self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
-                            logger.info(
-                                f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
-                            print(
-                                f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')                           
-                            break
-                        except Exception as e:
-                            logger.error("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
-                            print("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
-                            logger.error(e)
-                            print(e)
-                            time.sleep(3)
-                            continue
-                    
-                    trades = self.client.futures_account_trades(
-                        symbol=self.symbol, recvWindow=60000)
-                    pnl = 0
-                    for i in range(current_index):
-                            pnlNew = trades[-1-i]
-                            pnl = float(pnlNew["realizedPnl"]) + pnl
-                    # if last index dont send message
-                    if current_index != len(exit_prices):
-                        alert_bot.send_message(
-                            self.user, f'CURRENT PNL : {pnl}')
-
-                    lastpnl = pnl
         except Exception as e:
+            logger.error('FAILED TO MONITOR PRICE')
+            print("FAILED TO MONITOR PRICE")
             logger.error(f'ERROR INDENTIFIED : {e}')
-            print(f'ERROR INDENTIFIED : {e}')
-
+            print(f'ERROR INDENTIFIED : {e}')         
+                    
+        
     def buy(self):
         try:
             # setting desired margin type and leverage
@@ -402,9 +390,8 @@ class Binance():
                 print(
                     f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
                 time_start = time.time()
-                for _ in range(10):
+                while True:
                     try:
-                        print(f"Trying to place stop loss order with {quantity} {self.symbol} at {stop_loss_price} ")
                         stop_loss_order = self.client.futures_create_order(
                             symbol=self.symbol,
                             side='SELL',
@@ -520,7 +507,7 @@ class Binance():
             exit_target_quantity_list = item['exit_target_quantity_list']
             current_index = item['index']
             stop_loss_index = 0
-            lastpnl = 0
+            pnl = 0
             while True:
                 time.sleep(0.2)
 
@@ -532,10 +519,10 @@ class Binance():
                         symbol=self.symbol, recvWindow=60000)
 
                     pnlNew = trades[-1]
-                    pnl = float(pnlNew["realizedPnl"])
-                    lastpnl= pnl + lastpnl
+                    pnl = float(pnlNew["realizedPnl"]) + pnl
+                    self.total_pnl += pnl  # Update the total PNL here
                     alert_bot.send_message(
-                        self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                        self.user, f'POSITION CLOSED, FINAL PNL : {self.total_pnl}')
 
                     logger.info(f'ALL EXIT POINTS ACHIEVED')
                     print('ALL EXIT POINTS ACHIEVED')
@@ -546,7 +533,8 @@ class Binance():
                     sys.exit()
 
                 if positionClosed == True:
-
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
 
                     logger.info(
                         f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
@@ -557,10 +545,10 @@ class Binance():
                         symbol=self.symbol, recvWindow=60000)
 
                     pnlNew = trades[-1]
-                    pnl = float(pnlNew["realizedPnl"]) 
-                    lastpnl= pnl + lastpnl
+                    pnl = float(pnlNew["realizedPnl"]) + pnl
+                    self.total_pnl += pnl  # Update the total PNL here
                     alert_bot.send_message(
-                        self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                        self.user, f'POSITION CLOSED, FINAL PNL : {self.total_pnl}')
                     self.data.remove(self.symbol)
                     collections.delete_one({"_id": item_id})
                     cancel_order = self.client.futures_cancel_all_open_orders(
@@ -618,6 +606,36 @@ class Binance():
 
                     cancel_order = self.client.futures_cancel_all_open_orders(
                         symbol=self.symbol, recvWindow=60000)
+                    if current_index % self.stop_loss_levels == 0 and current_index != 0:
+                        if stop_loss_index == 0 or Stoploss_To_Entry:
+                            stop_loss_price = entry_price
+                            stop_loss_index += 1
+                        else:
+                            stop_loss_price = exit_prices[stop_loss_index-1]
+
+                    try:
+                        updated_stop_loss = self.client.futures_create_order(
+                            symbol=self.symbol,
+                            side='BUY',
+                            type='STOP_MARKET',
+                            quantity=sell_quantity,
+                            stopPrice=stop_loss_price,
+                            recvWindow=60000,
+                            reduceOnly=True,
+                        )
+                        collections.update_one(
+                            {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
+                        alert_bot.send_message(
+                            self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                        logger.info(
+                            f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                        print(
+                            f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                    except Exception as e:
+                        logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
+                        logger.error(e)
+                        print("UNABLE TO PLACE STOPP LOSS ORDER")
+                        print(e)
 
                     collections.update_one(
                         {"_id": item_id}, {"$set": {"index": current_index}})
@@ -628,57 +646,18 @@ class Binance():
                         logger.info(f'SOLD at {current_price}')
                         print(f'SOLD at {current_price}')
 
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
 
+                    pnlNew = trades[-1]
+                    pnl = float(pnlNew["realizedPnl"]) + pnl
+                    self.total_pnl += pnl  # Update the total PNL here
+                    alert_bot.send_message(
+                        self.user, f'CURRENT PNL : {pnl}, TOTAL PNL : {self.total_pnl}')
 
                     alert_bot.send_message(
                         self.user, f'EXIT POINT {current_index} ACHIEVED. BUYING {sell_quantity} {self.symbol} AT {current_price}.')
-                    
-                    if current_index % self.stop_loss_levels == 0 and current_index != 0:
-                        if stop_loss_index == 0 or Stoploss_To_Entry:
-                            stop_loss_price = entry_price
-                            stop_loss_index += 1
-                        else:
-                            stop_loss_price = exit_prices[stop_loss_index-1]
-                    for i in range (10):
-                        time.sleep(3)
-                        try:
-                            updated_stop_loss = self.client.futures_create_order(
-                                symbol=self.symbol,
-                                side='BUY',
-                                type='STOP_MARKET',
-                                quantity=sell_quantity,
-                                stopPrice=stop_loss_price,
-                                recvWindow=60000,
-                                reduceOnly=True,
-                            )
-                            collections.update_one(
-                                {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
-                            alert_bot.send_message(
-                                self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
-                            logger.info(
-                                f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
-                            print(
-                                f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
-                            break
-                        except Exception as e:
-                            logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
-                            logger.error(e)
-                            print("UNABLE TO PLACE STOPP LOSS ORDER")
-                            print(e)
 
-                    trades = self.client.futures_account_trades(
-                        symbol=self.symbol, recvWindow=60000)
-                    pnl = 0
-                    for i in range(current_index):
-                            pnlNew = trades[-1-i]
-                            pnl = float(pnlNew["realizedPnl"]) + pnl
-
-                    # if last index dont send message
-                    if current_index != len(exit_prices):
-                        alert_bot.send_message(
-                            self.user, f'CURRENT PNL : {pnl}')
-                        
-                    lastpnl = pnl
                 # elif current_price <= stop_loss_price:
                 #     logger.info(f'STOP LOSS ACHIEVED')
                 #     # sell all if stop_loss_price is acheived
@@ -698,10 +677,11 @@ class Binance():
                 #         logger.error(f'ERROR INDENTIFIED : {e}')
                 #         continue
         except Exception as e:
+            logger.error('FAILED TO MONITOR PRICE')
+            print("FAILED TO MONITOR PRICE")
             logger.error(f'ERROR INDENTIFIED : {e}')
             print(f'ERROR INDENTIFIED : {e}')
 
-            
     def sell(self):
         try:
             # setting desired margin type and leverage
@@ -771,9 +751,8 @@ class Binance():
                     f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
                 print(
                     f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
-                for _ in range(10):
+                while True:
                     try:
-                        print(f"Trying to place stop loss order with {quantity} {self.symbol} at {stop_loss_price} ")
                         stop_loss_order = self.client.futures_create_order(
                             symbol=self.symbol,
                             side='BUY',
