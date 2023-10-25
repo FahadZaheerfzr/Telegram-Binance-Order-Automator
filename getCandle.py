@@ -33,73 +33,96 @@ else:
     BASE_URL = 'wss://fstream.binancefuture.com'
 
 if mode == 'LIVE':
-    binance_client = Client(binance_api_key, binance_api_secret)
+    try:
+        binance_client = Client(binance_api_key, binance_api_secret)
+    except Exception as e:
+        loggerCandle.error("Error in binance_client, get_candle: %s",e)
+        print("Error in binance_client: ",e)
+        binance_client = Client(binance_api_key, binance_api_secret, testnet=True)
 else:
-    binance_client = Client(binance_api_key, binance_api_secret, testnet=True)
+    try:
+        binance_client = Client(binance_api_key, binance_api_secret, testnet=True)
+    except Exception as e:
+        loggerCandle.error("Error in binance_client get_candle: %s",e)
+        print("Error in binance_client: ",e)
 URL = f'{BASE_URL}/stream?streams=btcusdt@kline_1m'
 
 price_data = PriceData()
 # function to make api call and get candle data without socket
 def getCandle(symbol):
     # api call to get candle data
-    candle = binance_client.futures_klines(symbol=symbol, interval='1m', limit=1)
-    loggerCandle.info("candle: %s",candle)
-    loggerCandle.info("low: %s", candle[0][3])
-    print(candle,"low: ",candle[0][3])
-    return candle[0][3]
-
+    try:
+        candle = binance_client.futures_klines(symbol=symbol, interval='1m', limit=1)
+        loggerCandle.info("candle: %s",candle)
+        loggerCandle.info("low: %s", candle[0][3])
+        print(candle,"low: ",candle[0][3])
+        return candle[0][3]
+    except Exception as e:
+        loggerCandle.error("Error in getCandle: %s",e)
+        print("Error in getCandle: ",e)
+        return
 # function to monitor price and send alert
 def monitorPriceBuy(symbol,currentTime,sell):
     # get candle data
-    candle = float(getCandle(symbol+"USDT"))
-    # multiply with percentage and add to candle low
+    try:
+        candle = float(getCandle(symbol+"USDT"))
+        # multiply with percentage and add to candle low
 
-    price = candle + (candle * float(CounterTradeTickerPercentage)/100 )
-    loggerBuy.info("Trigger price: %s",price)
-    print("Trigger price: ",price)
-    # check if candle low is less than price
-    while True:
-        # get current price
+        price = candle + (candle * float(CounterTradeTickerPercentage)/100 )
+        loggerBuy.info("Trigger price: %s",price)
+        print("Trigger price: ",price)
+        # check if candle low is less than price
+        while True:
+            # get current price
 
-        try:
-            currentPrice = price_data.price_data[cryptocurrencies.index(symbol+"USDT")]
-        except Exception as e:
-            currentPrice = float(um_futures_client.ticker_price(symbol+"USDT")["price"])
-        
-        # print (currentPrice,price,time.time()-currentTime)
-        if currentPrice >= price:
-            # send alert
-            loggerBuy.info("buy - currentPrice: %s - priceToSell: %s",currentPrice,price)
-            sell(symbol)
-            break
-        if (time.time() - currentTime) > float(CounterTradeTickerTimer)*60:
-            print ("break")
-            break
+            try:
+                currentPrice = price_data.price_data[cryptocurrencies.index(symbol+"USDT")]
+            except Exception as e:
+                currentPrice = float(um_futures_client.ticker_price(symbol+"USDT")["price"])
+            
+            # print (currentPrice,price,time.time()-currentTime)
+            if currentPrice >= price:
+                # send alert
+                loggerBuy.info("buy - currentPrice: %s - priceToSell: %s",currentPrice,price)
+                sell(symbol)
+                break
+            if (time.time() - currentTime) > float(CounterTradeTickerTimer)*60:
+                print ("break")
+                break
+    except Exception as e:
+        loggerBuy.error("Error in monitorPriceBuy: %s",e)
+        print("Error in monitorPriceBuy: ",e)
+        return
 
 def monitorPriceSell(symbol,currentTime,buy):
     # get candle data
-    candle = float(getCandle(symbol+"USDT"))
-    # multiply with percentage and add to candle low
+    try:
+        candle = float(getCandle(symbol+"USDT"))
+        # multiply with percentage and add to candle low
 
-    price = candle - (candle * float(CounterTradeTickerPercentage)/100 )
-    loggerSell.info("Trigger price: %s",price)
-    print("Trigger price: ",price)
-    # check if candle low is less than price
-    while True:
-        # get current price
-        try:
-            currentPrice = price_data.price_data[cryptocurrencies.index(symbol+"USDT")]
-        except Exception as e:
-            currentPrice = float(um_futures_client.ticker_price(symbol+"USDT")["price"])
-        
-        if currentPrice < price:
-            loggerSell.info("sell - currentPrice: %s - priceToSell: %s",currentPrice,price)
-            # send alert
-            buy(symbol)
-            break
-        if (time.time() - currentTime) > float(CounterTradeTickerTimer)*60:
-            break
+        price = candle - (candle * float(CounterTradeTickerPercentage)/100 )
+        loggerSell.info("Trigger price: %s",price)
+        print("Trigger price: ",price)
+        # check if candle low is less than price
+        while True:
+            # get current price
+            try:
+                currentPrice = price_data.price_data[cryptocurrencies.index(symbol+"USDT")]
+            except Exception as e:
+                currentPrice = float(um_futures_client.ticker_price(symbol+"USDT")["price"])
             
+            if currentPrice < price:
+                loggerSell.info("sell - currentPrice: %s - priceToSell: %s",currentPrice,price)
+                # send alert
+                buy(symbol)
+                break
+            if (time.time() - currentTime) > float(CounterTradeTickerTimer)*60:
+                break
+            
+    except Exception as e:
+        loggerSell.error("Error in monitorPriceSell: %s",e)
+        print("Error in monitorPriceSell: ",e)
+        return
 
 
     

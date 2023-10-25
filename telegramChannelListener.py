@@ -41,9 +41,18 @@ CounterTradeTickerTimer = config.get(
     'Binance', 'COUNTER_TRADE_TICKER_TIMER')
 
 if mode == 'LIVE':
-    binance_client = Client(binance_api_key, binance_api_secret)
+    try:
+        binance_client = Client(binance_api_key, binance_api_secret)
+    except Exception as e:
+        logger.error(f'Error in binance_client: {e}')
+        print(f'Error in binance_client: {e}')
+        binance_client = Client(binance_api_key, binance_api_secret, testnet=True)
 else:
-    binance_client = Client(binance_api_key, binance_api_secret, testnet=True)
+    try:
+        binance_client = Client(binance_api_key, binance_api_secret, testnet=True)
+    except Exception as e:
+        logger.error(f'Error in binance_client: {e}')
+        print(f'Error in binance_client: {e}')
 
 WORDS_DICT = {
     'buy': [['buy', 'setup'], ['long', 'setup'], ['buy', 'high', 'sell', 'higher']],
@@ -85,19 +94,29 @@ def sell(symbol):
 
 
 def buy(symbol):
-    obj = createTestOrder.Binance(symbol, binance_client)
-    obj.buy()
+    try:
+        obj = createTestOrder.Binance(symbol, binance_client)
+        obj.buy()
+    except Exception as e:
+        logger.error(f'Error in buying : {e}')
+        print(f'Error in buying : {e}')
+        return
 
 # a function that monitors unclosed transactions
 
 
 def monitor_thread(data, binance_client, bot_token):
-    obj = createTestOrder.Binance(data['symbol'], binance_client)
-    alert_bot = telebot.TeleBot(bot_token, parse_mode=None)
-    if data['state'] == 'BUY':
-        obj.buyMonitor(data['_id'], alert_bot)
-    else:
-        obj.sellMonitor(data['_id'], alert_bot)
+    try:
+        obj = createTestOrder.Binance(data['symbol'], binance_client)
+        alert_bot = telebot.TeleBot(bot_token, parse_mode=None)
+        if data['state'] == 'BUY':
+            obj.buyMonitor(data['_id'], alert_bot)
+        else:
+            obj.sellMonitor(data['_id'], alert_bot)
+    except Exception as e:
+        logger.error(f'Error in monitor_thread : {e}')
+        print(f'Error in monitor_thread : {e}')
+        return
 
 
 # get all unclosed transactions from database
@@ -146,6 +165,7 @@ async def newMessageListener(client, message):
             symbol = newMessage.split("#")[1].split(" ")[0].upper()
         except Exception as e:
             print(e, "error in getting symbol")
+            logger.error(f'Error in getting symbol : {e}')
             return
 
         # Check if enough time has passed since the last processing of this symbol
