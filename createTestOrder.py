@@ -39,6 +39,7 @@ class Binance():
         self.total_pnl = 0
         self.price_data = PriceData()
         self.position_data = PositionData()
+        self.stoplossUpdatePrice = 0
         try:
             # reading config file
             self.configur = ConfigParser()
@@ -285,11 +286,14 @@ class Binance():
                         stop_loss_price, price_precision.price_precision[self.symbol])
 
                     try:
+                        logger.info(f'old stoploss {self.stoplossUpdatePrice}')
+                        self.stoplossUpdatePrice=int(self.stoplossUpdatePrice - sell_quantity)
+                        logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
                         updated_stop_loss = self.client.futures_create_order(
                             symbol=self.symbol,
                             side='SELL',
                             type='STOP_MARKET',
-                            quantity=sell_quantity,
+                            quantity=self.stoplossUpdatePrice,
                             stopPrice=stop_loss_price,
                             recvWindow=60000,
                             reduceOnly=True,
@@ -297,11 +301,11 @@ class Binance():
                         collections.update_one(
                             {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
                         alert_bot.send_message(
-                            self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                            self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
                         logger.info(
-                            f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                            f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
                         print(
-                            f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                            f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
                     except Exception as e:
                         logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
                         print("UNABLE TO PLACE STOPP LOSS ORDER")
@@ -451,7 +455,7 @@ class Binance():
             print("FAILED TO PLACE AN ORDER")
             print(f'ERROR INDENTIFIED : {e}')
             return
-
+        self.stoplossUpdatePrice=quantity.__round__(2)
         for i in range(3):
             try:
                 alert_bot = telebot.TeleBot(self.bot_token, parse_mode=None)
