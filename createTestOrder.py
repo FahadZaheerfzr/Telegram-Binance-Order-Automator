@@ -134,210 +134,216 @@ class Binance():
             sys.exit()
 
     def buyMonitor(self, item_id, alert_bot):
-        logger.info('THREAD STARTED')
-        print('THREAD STARTED')
-        item = collections.find_one({"_id": item_id})
-        entry_price = item['entry_price']
-        quantity = item['quantity']
-        exit_prices = item['exit_points']
-        stop_loss_price = item['stop_loss']
-        exit_target_quantity_list = item['exit_target_quantity_list']
-        current_index = item['index']
-        stop_loss_index = 0
-        lastpnl = 0
-        while True:
-            time.sleep(0.2)
-            current_price = float(
-                self.um_futures_client.ticker_price(self.symbol)["price"])
-            positionClosed = self.position_data.position_data[cryptocurrencies.index(
-                self.symbol)]  # get position data from position_data.py
-            # print (current_price)
-            # positions = PositionData.position_data
+        try:
+            logger.info('THREAD STARTED')
+            print('THREAD STARTED')
+            item = collections.find_one({"_id": item_id})
+            entry_price = item['entry_price']
+            quantity = item['quantity']
+            exit_prices = item['exit_points']
+            stop_loss_price = item['stop_loss']
+            exit_target_quantity_list = item['exit_target_quantity_list']
+            current_index = item['index']
+            stop_loss_index = 0
+            lastpnl = 0
+            while True:
+                time.sleep(0.2)
+                current_price = float(
+                    self.um_futures_client.ticker_price(self.symbol)["price"])
+                positionClosed = self.position_data.position_data[cryptocurrencies.index(
+                    self.symbol)]  # get position data from position_data.py
+                # print (current_price)
+                # positions = PositionData.position_data
 
-            if current_index == len(exit_prices):
-                # trades = self.client.futures_account_trades(
-                #     symbol=self.symbol, recvWindow=60000)
+                if current_index == len(exit_prices):
+                    # trades = self.client.futures_account_trades(
+                    #     symbol=self.symbol, recvWindow=60000)
 
-                # pnlNew = trades[-1]
-                # pnl = float(pnlNew["realizedPnl"])
-                lastpnl=  lastpnl
+                    # pnlNew = trades[-1]
+                    # pnl = float(pnlNew["realizedPnl"])
+                    lastpnl=  lastpnl
 
-                for _ in range(3):
-                    try:
-                        alert_bot.send_message(
-                            self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
-                        break
-                    except Exception as e:
-                        logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
-                        logger.error(f'ERROR INDENTIFIED : {e}')
-                        print("FAILED TO SEND TELEGRAM MESSAGE")
-                        print(f'ERROR INDENTIFIED : {e}')
-                        time.sleep(10)
-                logger.info(f'ALL EXIT POINTS ACHIEVED')
-                print('ALL EXIT POINTS ACHIEVED')
-                self.data.remove(self.symbol)
-                collections.delete_one({"_id": item_id})
-                cancel_order = self.client.futures_cancel_all_open_orders(
-                    symbol=self.symbol, recvWindow=60000)
-                sys.exit()
+                    for _ in range(3):
+                        try:
+                            alert_bot.send_message(
+                                self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                            break
+                        except Exception as e:
+                            logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                            logger.error(f'ERROR INDENTIFIED : {e}')
+                            print("FAILED TO SEND TELEGRAM MESSAGE")
+                            print(f'ERROR INDENTIFIED : {e}')
+                            time.sleep(10)
+                    logger.info(f'ALL EXIT POINTS ACHIEVED')
+                    print('ALL EXIT POINTS ACHIEVED')
+                    self.data.remove(self.symbol)
+                    collections.delete_one({"_id": item_id})
+                    cancel_order = self.client.futures_cancel_all_open_orders(
+                        symbol=self.symbol, recvWindow=60000)
+                    sys.exit()
 
-            if positionClosed == True:
-                trades = self.client.futures_account_trades(
-                    symbol=self.symbol, recvWindow=60000)
+                if positionClosed == True:
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
 
-                pnlNew = trades[-1]
-                pnl = float(pnlNew["realizedPnl"])
-                lastpnl= pnl + lastpnl
-                for _ in range(3):
-                    try:
-                        alert_bot.send_message(
-                            self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
-                        break
-                    except Exception as e:
-                        logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
-                        logger.error(f'ERROR INDENTIFIED : {e}')
-                        print("FAILED TO SEND TELEGRAM MESSAGE")
-                        print(f'ERROR INDENTIFIED : {e}')
-                        time.sleep(10)
-                logger.info(
-                    f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
-                print(f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
-                for _ in range(3):
-                    try:
-                        alert_bot.send_message(
-                            self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
-                        break
-                    except Exception as e:
-                        logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
-                        logger.error(f'ERROR INDENTIFIED : {e}')
-                        print("FAILED TO SEND TELEGRAM MESSAGE")
-                        print(f'ERROR INDENTIFIED : {e}')
-                        time.sleep(10)
+                    pnlNew = trades[-1]
+                    pnl = float(pnlNew["realizedPnl"])
+                    lastpnl= pnl + lastpnl
+                    for _ in range(3):
+                        try:
+                            alert_bot.send_message(
+                                self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                            break
+                        except Exception as e:
+                            logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                            logger.error(f'ERROR INDENTIFIED : {e}')
+                            print("FAILED TO SEND TELEGRAM MESSAGE")
+                            print(f'ERROR INDENTIFIED : {e}')
+                            time.sleep(10)
+                    logger.info(
+                        f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
+                    print(f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
+                    for _ in range(3):
+                        try:
+                            alert_bot.send_message(
+                                self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
+                            break
+                        except Exception as e:
+                            logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                            logger.error(f'ERROR INDENTIFIED : {e}')
+                            print("FAILED TO SEND TELEGRAM MESSAGE")
+                            print(f'ERROR INDENTIFIED : {e}')
+                            time.sleep(10)
 
-                collections.delete_one({"_id": item_id})
-                self.data.remove(self.symbol)
-                cancel_order = self.client.futures_cancel_all_open_orders(
-                    symbol=self.symbol, recvWindow=60000)
-                sys.exit()
+                    collections.delete_one({"_id": item_id})
+                    self.data.remove(self.symbol)
+                    cancel_order = self.client.futures_cancel_all_open_orders(
+                        symbol=self.symbol, recvWindow=60000)
+                    sys.exit()
 
-            if current_price >= exit_prices[current_index]:
-                sell_price = exit_prices[current_index]
-                sell_quantity = (
-                    int(exit_target_quantity_list[current_index])/100)*quantity
+                if current_price >= exit_prices[current_index]:
+                    sell_price = exit_prices[current_index]
+                    sell_quantity = (
+                        int(exit_target_quantity_list[current_index])/100)*quantity
 
-                if sell_quantity > 1:
-                    sell_quantity = int(sell_quantity)
-                else:
-                    sell_quantity = round(
-                        sell_quantity, price_precision.quantity_precision[self.symbol])
-                try:
-                    if current_index == len(exit_prices)-1:
-                        positions = next(obj for obj in self.client.futures_account(
-                            recvWindow=60000)['positions'] if obj['symbol'] == self.symbol)
-                        if positions['positionAmt'][0] == "-":
-                            positions['positionAmt'] = positions['positionAmt'][1:]
-
-                        sell_order = self.client.futures_create_order(
-                            symbol=self.symbol,
-                            side='SELL',
-                            type='MARKET',
-                            quantity=float(positions['positionAmt']),
-                            recvWindow=60000
-                        )
-                        current_index += 1
-                        cancel_order = self.client.futures_cancel_all_open_orders(
-                            symbol=self.symbol, recvWindow=60000)
+                    if sell_quantity > 1:
+                        sell_quantity = int(sell_quantity)
                     else:
-                        sell_order = self.client.futures_create_order(
-                            symbol=self.symbol,
-                            side='SELL',
-                            type='MARKET',
-                            quantity=sell_quantity,
-                            recvWindow=60000,
-                            reduceOnly=True,
-                        )
-                        current_index += 1
-                except Exception as e:
-                    logger.error(
-                        f'FAILED TO SELL AT EXIT POINT {current_index+1}')
-                    print(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
-                    logger.error(f'ERROR INDENTIFIED : {e}')
-                    print(f'ERROR INDENTIFIED : {e}')
-                    continue
-
-                cancel_order = self.client.futures_cancel_all_open_orders(
-                    symbol=self.symbol, recvWindow=60000)
-
-
-
-
-
-                collections.update_one(
-                    {"_id": item_id}, {"$set": {"index": current_index}})
-
-                if sell_order:
-                    logger.info(f'EXIT POINT {current_index} ACHIEVED')
-                    print(f'EXIT POINT {current_index} ACHIEVED')
-                    logger.info(f'SOLD at {current_price}')
-                    print(f'SOLD at {current_price}')
-
-                alert_bot.send_message(
-                    self.user, f'EXIT POINT {current_index} ACHIEVED. SELLING {sell_quantity} {self.symbol} AT {current_price}')
-                
-                if current_index % self.stop_loss_levels == 0 and current_index != 0:
-                    if stop_loss_index == 0 or Stoploss_To_Entry:
-                        stop_loss_price = entry_price
-                        stop_loss_index += 1
-                    else:
-                        stop_loss_price = exit_prices[stop_loss_index-1]
-
-                stop_loss_price = round(
-                    stop_loss_price, price_precision.price_precision[self.symbol])
-
-                logger.info(f'old stoploss {self.stoplossUpdatePrice}')
-                self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.price_precision[self.symbol])
-                logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
-                for i in range (10):
-                    time.sleep(3)
+                        sell_quantity = round(
+                            sell_quantity, price_precision.quantity_precision[self.symbol])
                     try:
-                        updated_stop_loss = self.client.futures_create_order(
-                            symbol=self.symbol,
-                            side='SELL',
-                            type='STOP_MARKET',
-                            quantity=self.stoplossUpdatePrice,
-                            stopPrice=stop_loss_price,
-                            recvWindow=60000,
-                            reduceOnly=True,
-                        )
-                        collections.update_one(
-                            {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
-                        alert_bot.send_message(
-                            self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                        logger.info(
-                            f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                        print(
-                            f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')                           
-                        break
+                        if current_index == len(exit_prices)-1:
+                            positions = next(obj for obj in self.client.futures_account(
+                                recvWindow=60000)['positions'] if obj['symbol'] == self.symbol)
+                            if positions['positionAmt'][0] == "-":
+                                positions['positionAmt'] = positions['positionAmt'][1:]
+
+                            sell_order = self.client.futures_create_order(
+                                symbol=self.symbol,
+                                side='SELL',
+                                type='MARKET',
+                                quantity=float(positions['positionAmt']),
+                                recvWindow=60000
+                            )
+                            current_index += 1
+                            cancel_order = self.client.futures_cancel_all_open_orders(
+                                symbol=self.symbol, recvWindow=60000)
+                        else:
+                            sell_order = self.client.futures_create_order(
+                                symbol=self.symbol,
+                                side='SELL',
+                                type='MARKET',
+                                quantity=sell_quantity,
+                                recvWindow=60000,
+                                reduceOnly=True,
+                            )
+                            current_index += 1
                     except Exception as e:
-                        logger.error("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
-                        print("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
-                        logger.error(e)
-                        print(e)
-                        time.sleep(3)
+                        logger.error(
+                            f'FAILED TO SELL AT EXIT POINT {current_index+1}')
+                        print(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
+                        logger.error(f'ERROR INDENTIFIED : {e}')
+                        print(f'ERROR INDENTIFIED : {e}')
                         continue
-                
-                trades = self.client.futures_account_trades(
-                    symbol=self.symbol, recvWindow=60000)
-                pnl = 0
-                for i in range(current_index):
-                        pnlNew = trades[-1-i]
-                        pnl = float(pnlNew["realizedPnl"]) + pnl
-                # if last index dont send message
-                if current_index != len(exit_prices):
-                    alert_bot.send_message(
-                        self.user, f'CURRENT PNL : {pnl}')
 
-                lastpnl = pnl
+                    cancel_order = self.client.futures_cancel_all_open_orders(
+                        symbol=self.symbol, recvWindow=60000)
+
+
+
+
+
+                    collections.update_one(
+                        {"_id": item_id}, {"$set": {"index": current_index}})
+
+                    if sell_order:
+                        logger.info(f'EXIT POINT {current_index} ACHIEVED')
+                        print(f'EXIT POINT {current_index} ACHIEVED')
+                        logger.info(f'SOLD at {current_price}')
+                        print(f'SOLD at {current_price}')
+
+                    alert_bot.send_message(
+                        self.user, f'EXIT POINT {current_index} ACHIEVED. SELLING {sell_quantity} {self.symbol} AT {current_price}')
+                    
+                    if current_index % self.stop_loss_levels == 0 and current_index != 0:
+                        if stop_loss_index == 0 or Stoploss_To_Entry:
+                            stop_loss_price = entry_price
+                            stop_loss_index += 1
+                        else:
+                            stop_loss_price = exit_prices[stop_loss_index-1]
+
+                    stop_loss_price = round(
+                        stop_loss_price, price_precision.price_precision[self.symbol])
+
+                    logger.info(f'old stoploss {self.stoplossUpdatePrice}')
+                    self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.price_precision[self.symbol])
+                    logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
+                    for i in range (10):
+                        time.sleep(3)
+                        try:
+                            updated_stop_loss = self.client.futures_create_order(
+                                symbol=self.symbol,
+                                side='SELL',
+                                type='STOP_MARKET',
+                                quantity=self.stoplossUpdatePrice,
+                                stopPrice=stop_loss_price,
+                                recvWindow=60000,
+                                reduceOnly=True,
+                            )
+                            collections.update_one(
+                                {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
+                            alert_bot.send_message(
+                                self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                            logger.info(
+                                f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                            print(
+                                f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')                           
+                            break
+                        except Exception as e:
+                            logger.error("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
+                            print("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
+                            logger.error(e)
+                            print(e)
+                            time.sleep(3)
+                            continue
+                    
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
+                    pnl = 0
+                    for i in range(current_index):
+                            pnlNew = trades[-1-i]
+                            pnl = float(pnlNew["realizedPnl"]) + pnl
+                    # if last index dont send message
+                    if current_index != len(exit_prices):
+                        alert_bot.send_message(
+                            self.user, f'CURRENT PNL : {pnl}')
+
+                    lastpnl = pnl
+        except Exception as e:
+            logger.error('FAILED TO MONITOR PRICE')
+            print("FAILED TO MONITOR PRICE")
+            logger.error(f'ERROR INDENTIFIED : {e}')
+            print(f'ERROR INDENTIFIED : {e}')
 
     def buy(self):
         try:
@@ -510,197 +516,203 @@ class Binance():
     # Monitor the price of the token
 
     def sellMonitor(self, item_id, alert_bot):
-        logger.info('THREAD STARTED')
-        print('THREAD STARTED')
-        item = collections.find_one({"_id": item_id})
-        entry_price = item['entry_price']
-        quantity = item['quantity']
-        exit_prices = item['exit_points']
-        stop_loss_price = item['stop_loss']
-        exit_target_quantity_list = item['exit_target_quantity_list']
-        current_index = item['index']
-        stop_loss_index = 0
-        lastpnl = 0
-        while True:
-            time.sleep(0.2)
+        try:
+            logger.info('THREAD STARTED')
+            print('THREAD STARTED')
+            item = collections.find_one({"_id": item_id})
+            entry_price = item['entry_price']
+            quantity = item['quantity']
+            exit_prices = item['exit_points']
+            stop_loss_price = item['stop_loss']
+            exit_target_quantity_list = item['exit_target_quantity_list']
+            current_index = item['index']
+            stop_loss_index = 0
+            lastpnl = 0
+            while True:
+                time.sleep(0.2)
 
-            positionClosed = self.position_data.position_data[cryptocurrencies.index(
-                self.symbol)]  # get position data from position_data.py
+                positionClosed = self.position_data.position_data[cryptocurrencies.index(
+                    self.symbol)]  # get position data from position_data.py
 
-            if current_index == len(exit_prices):
-                # trades = self.client.futures_account_trades(
-                #     symbol=self.symbol, recvWindow=60000)
+                if current_index == len(exit_prices):
+                    # trades = self.client.futures_account_trades(
+                    #     symbol=self.symbol, recvWindow=60000)
 
-                # pnlNew = trades[-1]
-                # pnl = float(pnlNew["realizedPnl"])
-                lastpnl=  lastpnl
-                alert_bot.send_message(
-                    self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
-
-                logger.info(f'ALL EXIT POINTS ACHIEVED')
-                print('ALL EXIT POINTS ACHIEVED')
-                self.data.remove(self.symbol)
-                collections.delete_one({"_id": item_id})
-                cancel_order = self.client.futures_cancel_all_open_orders(
-                    symbol=self.symbol, recvWindow=60000)
-                sys.exit()
-
-            if positionClosed == True:
-
-
-                logger.info(
-                    f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
-                print(f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
-                alert_bot.send_message(
-                    self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
-                trades = self.client.futures_account_trades(
-                    symbol=self.symbol, recvWindow=60000)
-
-                pnlNew = trades[-1]
-                pnl = float(pnlNew["realizedPnl"]) 
-                lastpnl= pnl + lastpnl
-                alert_bot.send_message(
-                    self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
-                self.data.remove(self.symbol)
-                collections.delete_one({"_id": item_id})
-                cancel_order = self.client.futures_cancel_all_open_orders(
-                    symbol=self.symbol, recvWindow=60000)
-
-                sys.exit()
-
-            current_price = self.price_data.price_data[cryptocurrencies.index(
-                self.symbol)]
-            
- 
-            if current_price <= exit_prices[current_index]:
-                sell_quantity = (
-                    int(exit_target_quantity_list[current_index])/100)*quantity
-
-                if sell_quantity > 1:
-                    sell_quantity = int(sell_quantity)
-                else:
-                    sell_quantity = round(
-                        sell_quantity, price_precision.quantity_precision[self.symbol])
-                try:
-                    if current_index == len(exit_prices)-1:
-                        positions = next(obj for obj in self.client.futures_account(
-                            recvWindow=60000,)['positions'] if obj['symbol'] == self.symbol)
-                        if positions['positionAmt'][0] == "-":
-                            sell_quantity = positions['positionAmt'][1:]
-
-                        sell_order = self.client.futures_create_order(
-                            symbol=self.symbol,
-                            side='BUY',
-                            type='MARKET',
-                            quantity=float(sell_quantity),
-                            recvWindow=60000,
-                            reduceOnly=True,
-                        )
-                        current_index += 1
-                        cancel_order = self.client.futures_cancel_all_open_orders(
-                            symbol=self.symbol, recvWindow=60000)
-                    else:
-                        sell_order = self.client.futures_create_order(
-                            symbol=self.symbol,
-                            side='BUY',
-                            type='MARKET',
-                            quantity=sell_quantity,
-                            recvWindow=60000
-                        )
-                        current_index += 1
-                except Exception as e:
-                    logger.error(
-                        f'FAILED TO SELL AT EXIT POINT {current_index+1}')
-                    logger.error(f'ERROR INDENTIFIED : {e}')
-                    print(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
-                    print(f'ERROR INDENTIFIED : {e}')
-                    continue
-
-                cancel_order = self.client.futures_cancel_all_open_orders(
-                    symbol=self.symbol, recvWindow=60000)
-
-                collections.update_one(
-                    {"_id": item_id}, {"$set": {"index": current_index}})
-
-                if sell_order:
-                    logger.info(f'EXIT POINT {current_index} ACHIEVED')
-                    print(f'EXIT POINT {current_index} ACHIEVED')
-                    logger.info(f'SOLD at {current_price}')
-                    print(f'SOLD at {current_price}')
-
-
-
-                alert_bot.send_message(
-                    self.user, f'EXIT POINT {current_index} ACHIEVED. BUYING {sell_quantity} {self.symbol} AT {current_price}.')
-                
-                if current_index % self.stop_loss_levels == 0 and current_index != 0:
-                    if stop_loss_index == 0 or Stoploss_To_Entry:
-                        stop_loss_price = entry_price
-                        stop_loss_index += 1
-                    else:
-                        stop_loss_price = exit_prices[stop_loss_index-1]
-
-                logger.info(f'old stoploss {self.stoplossUpdatePrice}')
-                self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.price_precision[self.symbol])
-                logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
-                for i in range (10):
-                    time.sleep(3)
-                    try:
-                        updated_stop_loss = self.client.futures_create_order(
-                            symbol=self.symbol,
-                            side='BUY',
-                            type='STOP_MARKET',
-                            quantity=self.stoplossUpdatePrice,
-                            stopPrice=stop_loss_price,
-                            recvWindow=60000,
-                            reduceOnly=True,
-                        )
-                        collections.update_one(
-                            {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
-                        alert_bot.send_message(
-                            self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                        logger.info(
-                            f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                        print(
-                            f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                        break
-                    except Exception as e:
-                        logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
-                        logger.error(e)
-                        print("UNABLE TO PLACE STOPP LOSS ORDER")
-                        print(e)
-
-                trades = self.client.futures_account_trades(
-                    symbol=self.symbol, recvWindow=60000)
-                pnl = 0
-                for i in range(current_index):
-                        pnlNew = trades[-1-i]
-                        pnl = float(pnlNew["realizedPnl"]) + pnl
-
-                # if last index dont send message
-                if current_index != len(exit_prices):
+                    # pnlNew = trades[-1]
+                    # pnl = float(pnlNew["realizedPnl"])
+                    lastpnl=  lastpnl
                     alert_bot.send_message(
-                        self.user, f'CURRENT PNL : {pnl}')
+                        self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+
+                    logger.info(f'ALL EXIT POINTS ACHIEVED')
+                    print('ALL EXIT POINTS ACHIEVED')
+                    self.data.remove(self.symbol)
+                    collections.delete_one({"_id": item_id})
+                    cancel_order = self.client.futures_cancel_all_open_orders(
+                        symbol=self.symbol, recvWindow=60000)
+                    sys.exit()
+
+                if positionClosed == True:
+
+
+                    logger.info(
+                        f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
+                    print(f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
+                    alert_bot.send_message(
+                        self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
+
+                    pnlNew = trades[-1]
+                    pnl = float(pnlNew["realizedPnl"]) 
+                    lastpnl= pnl + lastpnl
+                    alert_bot.send_message(
+                        self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                    self.data.remove(self.symbol)
+                    collections.delete_one({"_id": item_id})
+                    cancel_order = self.client.futures_cancel_all_open_orders(
+                        symbol=self.symbol, recvWindow=60000)
+
+                    sys.exit()
+
+                current_price = self.price_data.price_data[cryptocurrencies.index(
+                    self.symbol)]
+                
+    
+                if current_price <= exit_prices[current_index]:
+                    sell_quantity = (
+                        int(exit_target_quantity_list[current_index])/100)*quantity
+
+                    if sell_quantity > 1:
+                        sell_quantity = int(sell_quantity)
+                    else:
+                        sell_quantity = round(
+                            sell_quantity, price_precision.quantity_precision[self.symbol])
+                    try:
+                        if current_index == len(exit_prices)-1:
+                            positions = next(obj for obj in self.client.futures_account(
+                                recvWindow=60000,)['positions'] if obj['symbol'] == self.symbol)
+                            if positions['positionAmt'][0] == "-":
+                                sell_quantity = positions['positionAmt'][1:]
+
+                            sell_order = self.client.futures_create_order(
+                                symbol=self.symbol,
+                                side='BUY',
+                                type='MARKET',
+                                quantity=float(sell_quantity),
+                                recvWindow=60000,
+                                reduceOnly=True,
+                            )
+                            current_index += 1
+                            cancel_order = self.client.futures_cancel_all_open_orders(
+                                symbol=self.symbol, recvWindow=60000)
+                        else:
+                            sell_order = self.client.futures_create_order(
+                                symbol=self.symbol,
+                                side='BUY',
+                                type='MARKET',
+                                quantity=sell_quantity,
+                                recvWindow=60000
+                            )
+                            current_index += 1
+                    except Exception as e:
+                        logger.error(
+                            f'FAILED TO SELL AT EXIT POINT {current_index+1}')
+                        logger.error(f'ERROR INDENTIFIED : {e}')
+                        print(f'FAILED TO SELL AT EXIT POINT {current_index+1}')
+                        print(f'ERROR INDENTIFIED : {e}')
+                        continue
+
+                    cancel_order = self.client.futures_cancel_all_open_orders(
+                        symbol=self.symbol, recvWindow=60000)
+
+                    collections.update_one(
+                        {"_id": item_id}, {"$set": {"index": current_index}})
+
+                    if sell_order:
+                        logger.info(f'EXIT POINT {current_index} ACHIEVED')
+                        print(f'EXIT POINT {current_index} ACHIEVED')
+                        logger.info(f'SOLD at {current_price}')
+                        print(f'SOLD at {current_price}')
+
+
+
+                    alert_bot.send_message(
+                        self.user, f'EXIT POINT {current_index} ACHIEVED. BUYING {sell_quantity} {self.symbol} AT {current_price}.')
                     
-                lastpnl = pnl
-            # elif current_price <= stop_loss_price:
-            #     logger.info(f'STOP LOSS ACHIEVED')
-            #     # sell all if stop_loss_price is acheived
-            #     try:
-            #         sell_order = self.client.futures_create_order(
-            #             symbol=self.symbol,
-            #             side='SELL',
-            #             type='MARKET',
-            #             quantity=quantity,
-            #             recvWindow=60000
-            #         )
-            #         self.data.remove(self.symbol)
-            #         alert_bot.send_message(self.user, f'STOP LOSS ACHIEVED. SELLING {quantity} AT {current_price}.')
-            #         sys.exit()
-            #     except Exception as e:
-            #         logger.error(f'FAILED TO SELL AT STOP LOSS')
-            #         logger.error(f'ERROR INDENTIFIED : {e}')
-            #         continue
+                    if current_index % self.stop_loss_levels == 0 and current_index != 0:
+                        if stop_loss_index == 0 or Stoploss_To_Entry:
+                            stop_loss_price = entry_price
+                            stop_loss_index += 1
+                        else:
+                            stop_loss_price = exit_prices[stop_loss_index-1]
+
+                    logger.info(f'old stoploss {self.stoplossUpdatePrice}')
+                    self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.price_precision[self.symbol])
+                    logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
+                    for i in range (10):
+                        time.sleep(3)
+                        try:
+                            updated_stop_loss = self.client.futures_create_order(
+                                symbol=self.symbol,
+                                side='BUY',
+                                type='STOP_MARKET',
+                                quantity=self.stoplossUpdatePrice,
+                                stopPrice=stop_loss_price,
+                                recvWindow=60000,
+                                reduceOnly=True,
+                            )
+                            collections.update_one(
+                                {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
+                            alert_bot.send_message(
+                                self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                            logger.info(
+                                f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                            print(
+                                f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                            break
+                        except Exception as e:
+                            logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
+                            logger.error(e)
+                            print("UNABLE TO PLACE STOPP LOSS ORDER")
+                            print(e)
+
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
+                    pnl = 0
+                    for i in range(current_index):
+                            pnlNew = trades[-1-i]
+                            pnl = float(pnlNew["realizedPnl"]) + pnl
+
+                    # if last index dont send message
+                    if current_index != len(exit_prices):
+                        alert_bot.send_message(
+                            self.user, f'CURRENT PNL : {pnl}')
+                        
+                    lastpnl = pnl
+                # elif current_price <= stop_loss_price:
+                #     logger.info(f'STOP LOSS ACHIEVED')
+                #     # sell all if stop_loss_price is acheived
+                #     try:
+                #         sell_order = self.client.futures_create_order(
+                #             symbol=self.symbol,
+                #             side='SELL',
+                #             type='MARKET',
+                #             quantity=quantity,
+                #             recvWindow=60000
+                #         )
+                #         self.data.remove(self.symbol)
+                #         alert_bot.send_message(self.user, f'STOP LOSS ACHIEVED. SELLING {quantity} AT {current_price}.')
+                #         sys.exit()
+                #     except Exception as e:
+                #         logger.error(f'FAILED TO SELL AT STOP LOSS')
+                #         logger.error(f'ERROR INDENTIFIED : {e}')
+                #         continue
+        except Exception as e:
+            logger.error('FAILED TO MONITOR PRICE')
+            print("FAILED TO MONITOR PRICE")
+            logger.error(f'ERROR INDENTIFIED : {e}')
+            print(f'ERROR INDENTIFIED : {e}')
 
     def sell(self):
         try:
