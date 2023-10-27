@@ -658,11 +658,11 @@ class Binance():
                         collections.update_one(
                             {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
                         alert_bot.send_message(
-                            self.user, f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                            self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
                         logger.info(
-                            f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                            f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
                         print(
-                            f'STOP LOSS ORDER UPDATED FOR {sell_quantity} {self.symbol} at {stop_loss_price}.')
+                            f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
                         break
                     except Exception as e:
                         logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
