@@ -155,12 +155,12 @@ class Binance():
             # positions = PositionData.position_data
 
             if current_index == len(exit_prices):
-                trades = self.client.futures_account_trades(
-                    symbol=self.symbol, recvWindow=60000)
+                # trades = self.client.futures_account_trades(
+                #     symbol=self.symbol, recvWindow=60000)
 
-                pnlNew = trades[-1]
-                pnl = float(pnlNew["realizedPnl"])
-                lastpnl= pnl + lastpnl
+                # pnlNew = trades[-1]
+                # pnl = float(pnlNew["realizedPnl"])
+                lastpnl=  lastpnl
 
                 for _ in range(3):
                     try:
@@ -295,7 +295,7 @@ class Binance():
                     stop_loss_price, price_precision.price_precision[self.symbol])
 
                 logger.info(f'old stoploss {self.stoplossUpdatePrice}')
-                self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - sell_quantity, price_precision.price_precision[self.symbol])
+                self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.price_precision[self.symbol])
                 logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
                 for i in range (10):
                     time.sleep(3)
@@ -528,12 +528,12 @@ class Binance():
                 self.symbol)]  # get position data from position_data.py
 
             if current_index == len(exit_prices):
-                trades = self.client.futures_account_trades(
-                    symbol=self.symbol, recvWindow=60000)
+                # trades = self.client.futures_account_trades(
+                #     symbol=self.symbol, recvWindow=60000)
 
-                pnlNew = trades[-1]
-                pnl = float(pnlNew["realizedPnl"])
-                lastpnl= pnl + lastpnl
+                # pnlNew = trades[-1]
+                # pnl = float(pnlNew["realizedPnl"])
+                lastpnl=  lastpnl
                 alert_bot.send_message(
                     self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
 
@@ -641,7 +641,7 @@ class Binance():
                         stop_loss_price = exit_prices[stop_loss_index-1]
 
                 logger.info(f'old stoploss {self.stoplossUpdatePrice}')
-                self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - sell_quantity, price_precision.price_precision[self.symbol])
+                self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.price_precision[self.symbol])
                 logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
                 for i in range (10):
                     time.sleep(3)
