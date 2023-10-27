@@ -163,6 +163,10 @@ async def newMessageListener(client, message):
             newMessage = message.caption if message.media and message.caption else message.text
             newMessage = newMessage.lower()
             symbol = newMessage.split("#")[1].split(" ")[0].upper()
+            # remove anything after \n
+            symbol = symbol.split("\n")[0]
+            logger.info(f'Got symbol : {symbol}')
+            
         except Exception as e:
             print(e, "error in getting symbol")
             logger.error(f'Error in getting symbol : {e}')
