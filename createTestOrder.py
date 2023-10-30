@@ -339,7 +339,7 @@ class Binance():
                     logger.info(f'getting trades from api with symbol {self.symbol} and recvWindow 60000')
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
-                    logger.info(f'we got trades from api {trades}')
+                    # logger.info(f'we got trades from api {trades}')
                     pnl = 0
                     for i in range(current_index):
                             logger.info(f'we got trades from api {trades[-1-i]} we get the last one and add it to pnl according to index={i}')
@@ -707,7 +707,7 @@ class Binance():
                     logger.info(f'getting trades from api with symbol {self.symbol} and recvWindow 60000')
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
-                    logger.info(f'we got trades from api {trades}')
+                    # logger.info(f'we got trades from api {trades}')
                     pnl = 0
                     for i in range(current_index):
                             logger.info(f'we got trades from api {trades[-1-i]} we get the last one and add it to pnl according to index={i}')
