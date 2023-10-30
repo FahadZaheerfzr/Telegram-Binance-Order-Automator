@@ -298,34 +298,35 @@ class Binance():
                     logger.info(f'old stoploss {self.stoplossUpdatePrice}')
                     self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.price_precision[self.symbol])
                     logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
-                    for i in range (10):
-                        time.sleep(3)
-                        try:
-                            updated_stop_loss = self.client.futures_create_order(
-                                symbol=self.symbol,
-                                side='SELL',
-                                type='STOP_MARKET',
-                                quantity=self.stoplossUpdatePrice,
-                                stopPrice=stop_loss_price,
-                                recvWindow=60000,
-                                reduceOnly=True,
-                            )
-                            collections.update_one(
-                                {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
-                            alert_bot.send_message(
-                                self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                            logger.info(
-                                f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                            print(
-                                f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')                           
-                            break
-                        except Exception as e:
-                            logger.error("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
-                            print("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
-                            logger.error(e)
-                            print(e)
+                    if current_index != len(exit_prices):
+                        for i in range (10):
                             time.sleep(3)
-                            continue
+                            try:
+                                updated_stop_loss = self.client.futures_create_order(
+                                    symbol=self.symbol,
+                                    side='SELL',
+                                    type='STOP_MARKET',
+                                    quantity=self.stoplossUpdatePrice,
+                                    stopPrice=stop_loss_price,
+                                    recvWindow=60000,
+                                    reduceOnly=True,
+                                )
+                                collections.update_one(
+                                    {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
+                                alert_bot.send_message(
+                                    self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                logger.info(
+                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                print(
+                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')                           
+                                break
+                            except Exception as e:
+                                logger.error("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
+                                print("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
+                                logger.error(e)
+                                print(e)
+                                time.sleep(3)
+                                continue
                     
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
@@ -650,32 +651,33 @@ class Binance():
                     logger.info(f'old stoploss {self.stoplossUpdatePrice}')
                     self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.price_precision[self.symbol])
                     logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
-                    for i in range (10):
-                        time.sleep(3)
-                        try:
-                            updated_stop_loss = self.client.futures_create_order(
-                                symbol=self.symbol,
-                                side='BUY',
-                                type='STOP_MARKET',
-                                quantity=self.stoplossUpdatePrice,
-                                stopPrice=stop_loss_price,
-                                recvWindow=60000,
-                                reduceOnly=True,
-                            )
-                            collections.update_one(
-                                {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
-                            alert_bot.send_message(
-                                self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                            logger.info(
-                                f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                            print(
-                                f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
-                            break
-                        except Exception as e:
-                            logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
-                            logger.error(e)
-                            print("UNABLE TO PLACE STOPP LOSS ORDER")
-                            print(e)
+                    if current_index != len(exit_prices):
+                        for i in range (10):
+                            time.sleep(3)
+                            try:
+                                updated_stop_loss = self.client.futures_create_order(
+                                    symbol=self.symbol,
+                                    side='BUY',
+                                    type='STOP_MARKET',
+                                    quantity=self.stoplossUpdatePrice,
+                                    stopPrice=stop_loss_price,
+                                    recvWindow=60000,
+                                    reduceOnly=True,
+                                )
+                                collections.update_one(
+                                    {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
+                                alert_bot.send_message(
+                                    self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                logger.info(
+                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                print(
+                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                break
+                            except Exception as e:
+                                logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
+                                logger.error(e)
+                                print("UNABLE TO PLACE STOPP LOSS ORDER")
+                                print(e)
 
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
