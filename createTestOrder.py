@@ -80,6 +80,7 @@ class Binance():
         try:
             leverage = int(self.configur.get('Binance', 'LEVERAGE'))
             # self.symbol = self.configur.get('Binance','SYMBOL')
+            logger.info(f'ATTEMPTING TO SET LEVERAGE TO with api call where symbol is {self.symbol} and leverage is {leverage}')
             self.client.futures_change_leverage(
                 symbol=self.symbol, leverage=leverage, recvWindow=60000)
             time_end = time.time()
@@ -101,6 +102,7 @@ class Binance():
         try:
             margin_type = self.configur.get('Binance', 'MARGIN_TYPE')
             # symbol = self.configur.get('Binance','SYMBOL')
+            logger.info(f'ATTEMPTING TO SET MARGIN TYPE with api call TO {margin_type} and symbol is {self.symbol}')
             self.client.futures_change_margin_type(
                 symbol=self.symbol, marginType=margin_type, recvWindow=60000)
             time_end = time.time()
@@ -239,7 +241,7 @@ class Binance():
                                 recvWindow=60000)['positions'] if obj['symbol'] == self.symbol)
                             if positions['positionAmt'][0] == "-":
                                 positions['positionAmt'] = positions['positionAmt'][1:]
-
+                            logger.info(f'api request to create order with symbol {self.symbol} and side sell and type market and quantity {positions["positionAmt"]} and recvWindow 60000')
                             sell_order = self.client.futures_create_order(
                                 symbol=self.symbol,
                                 side='SELL',
@@ -251,6 +253,7 @@ class Binance():
                             cancel_order = self.client.futures_cancel_all_open_orders(
                                 symbol=self.symbol, recvWindow=60000)
                         else:
+                            logger.info(f'api request to create order with symbol {self.symbol} and side sell and type market and quantity {sell_quantity} and recvWindow 60000')
                             sell_order = self.client.futures_create_order(
                                 symbol=self.symbol,
                                 side='SELL',
@@ -308,6 +311,7 @@ class Binance():
                         for i in range (10):
                             time.sleep(3)
                             try:
+                                logger.info(f'api request to create order with symbol {self.symbol} and side sell and type stop market and quantity {self.stoplossUpdatePrice} and stopPrice {stop_loss_price} and recvWindow 60000 and reduceOnly True')
                                 updated_stop_loss = self.client.futures_create_order(
                                     symbol=self.symbol,
                                     side='SELL',
@@ -333,7 +337,7 @@ class Binance():
                                 print(e)
                                 time.sleep(3)
                                 continue
-                    
+                    logger.info(f'getting trades from api with symbol {self.symbol} and recvWindow 60000')
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
                     logger.info(f'we got trades from api {trades}')
@@ -608,7 +612,7 @@ class Binance():
                                 recvWindow=60000,)['positions'] if obj['symbol'] == self.symbol)
                             if positions['positionAmt'][0] == "-":
                                 sell_quantity = positions['positionAmt'][1:]
-
+                            logger.info(f'api request to create order with symbol {self.symbol} and side buy and type market and quantity {sell_quantity} and recvWindow 60000 and reduceOnly True')
                             sell_order = self.client.futures_create_order(
                                 symbol=self.symbol,
                                 side='BUY',
@@ -621,6 +625,7 @@ class Binance():
                             cancel_order = self.client.futures_cancel_all_open_orders(
                                 symbol=self.symbol, recvWindow=60000)
                         else:
+                            logger.info(f'api request to create order with symbol {self.symbol} and side buy and type market and quantity {sell_quantity} and recvWindow 60000')
                             sell_order = self.client.futures_create_order(
                                 symbol=self.symbol,
                                 side='BUY',
@@ -673,6 +678,7 @@ class Binance():
                         for i in range (10):
                             time.sleep(3)
                             try:
+                                logger.info(f'api request to create order with symbol {self.symbol} and side sell and type stop market and quantity {self.stoplossUpdatePrice} and stopPrice {stop_loss_price} and recvWindow 60000 and reduceOnly True')
                                 updated_stop_loss = self.client.futures_create_order(
                                     symbol=self.symbol,
                                     side='BUY',
@@ -696,7 +702,7 @@ class Binance():
                                 logger.error(e)
                                 print("UNABLE TO PLACE STOPP LOSS ORDER")
                                 print(e)
-
+                    logger.info(f'getting trades from api with symbol {self.symbol} and recvWindow 60000')
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
                     logger.info(f'we got trades from api {trades}')
