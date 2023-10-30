@@ -38,7 +38,7 @@ class Binance():
 
         self.price_data = PriceData()
         self.position_data = PositionData()
-        self.stoplossUpdatePrice = 0
+        self.stoplossUpdateQty = 0
         try:
             # reading config file
             self.configur = ConfigParser()
@@ -300,23 +300,22 @@ class Binance():
                     stop_loss_price = round(
                         stop_loss_price, price_precision.price_precision[self.symbol])
 
-                    logger.info(f'old stoploss {self.stoplossUpdatePrice}')
-                    if self.stoplossUpdatePrice > 1:
-                        self.stoplossUpdatePrice = int(self.stoplossUpdatePrice)
-                    else:
-                        self.stoplossUpdatePrice = round(
-                            self.stoplossUpdatePrice, price_precision.quantity_precision[self.symbol])
-                    logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
+                    logger.info(f'old stoploss {self.stoplossUpdateQty}')
+
+                    self.stoplossUpdateQty = round(
+                            self.stoplossUpdateQty, price_precision.quantity_precision[self.symbol])
+                    logger.info(f'stoploss updating at {self.stoplossUpdateQty}, sell qty is {sell_quantity}')
+                    logger.info(f'api request to create order with symbol {self.symbol} and side sell and type stop market and quantity {self.stoplossUpdateQty} and stopPrice {stop_loss_price} and recvWindow 60000 and reduceOnly True')
+
                     if current_index != len(exit_prices):
                         for i in range (10):
                             time.sleep(3)
                             try:
-                                logger.info(f'api request to create order with symbol {self.symbol} and side sell and type stop market and quantity {self.stoplossUpdatePrice} and stopPrice {stop_loss_price} and recvWindow 60000 and reduceOnly True')
                                 updated_stop_loss = self.client.futures_create_order(
                                     symbol=self.symbol,
                                     side='SELL',
                                     type='STOP_MARKET',
-                                    quantity=self.stoplossUpdatePrice,
+                                    quantity=self.stoplossUpdateQty,
                                     stopPrice=stop_loss_price,
                                     recvWindow=60000,
                                     reduceOnly=True,
@@ -324,11 +323,11 @@ class Binance():
                                 collections.update_one(
                                     {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
                                 alert_bot.send_message(
-                                    self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                    self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdateQty} {self.symbol} at {stop_loss_price}.')
                                 logger.info(
-                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdateQty} {self.symbol} at {stop_loss_price}.')
                                 print(
-                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')                           
+                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdateQty} {self.symbol} at {stop_loss_price}.')                           
                                 break
                             except Exception as e:
                                 logger.error("UNABLE TO PLACE STOPP LOSS ORDER. RETRYING...")
@@ -365,12 +364,14 @@ class Binance():
             # self.set_leverage()
             # self.set_margintype()
             budget = self.configur.getfloat('Binance', 'USDT_BUDGET')
+            print("symb in buy is ",self.symbol)
             try:
                 current_price = self.price_data.price_data[cryptocurrencies.index(
                     self.symbol)]
             except Exception as e:
                 current_price = float(
                     self.um_futures_client.ticker_price(self.symbol)["price"])
+            
 
             logger.info(f'CURRENT PRICE OF {self.symbol} is {current_price}')
             print(f'CURRENT PRICE OF {self.symbol} is {current_price}')
@@ -383,6 +384,7 @@ class Binance():
                 f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
             print(
                 f'ATTEMPTING TO BUY {quantity} {self.symbol} at {current_price}')
+            logger.info(f'api request to create order with symbol {self.symbol} and side buy and type market and quantity {quantity} and recvWindow 60000')
             order = self.client.futures_create_order(
                 symbol=self.symbol,
                 side='BUY',
@@ -390,6 +392,7 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,
             )
+            print(order,"orderrr")
             logger.info(
                 f'ORDER PLACED : {order["orderId"]} at {current_price}')
             print(f'ORDER PLACED : {order["orderId"]} at {current_price}')
@@ -426,6 +429,7 @@ class Binance():
                 for _ in range(10):
                     try:
                         print(f"Trying to place stop loss order with {quantity} {self.symbol} at {stop_loss_price} ")
+                        logger.info(f"Trying to place stop loss order with  api {quantity} {self.symbol} at {stop_loss_price} ")
                         stop_loss_order = self.client.futures_create_order(
                             symbol=self.symbol,
                             side='SELL',
@@ -485,7 +489,7 @@ class Binance():
             print("FAILED TO PLACE AN ORDER")
             print(f'ERROR INDENTIFIED : {e}')
             return
-        self.stoplossUpdatePrice=quantity.__round__(2)
+        self.stoplossUpdateQty=quantity.__round__(2)
         for i in range(3):
             try:
                 alert_bot = telebot.TeleBot(self.bot_token, parse_mode=None)
@@ -666,24 +670,22 @@ class Binance():
                         else:
                             stop_loss_price = exit_prices[stop_loss_index-1]
 
-                    logger.info(f'old stoploss {self.stoplossUpdatePrice}')
+                    logger.info(f'old stoploss {self.stoplossUpdateQty}')
                     # self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.quantity_precision[self.symbol])
-                    if self.stoplossUpdatePrice > 1:
-                        self.stoplossUpdatePrice = int(self.stoplossUpdatePrice)
-                    else:
-                        self.stoplossUpdatePrice = round(
-                            self.stoplossUpdatePrice, price_precision.quantity_precision[self.symbol])
-                    logger.info(f'stoploss updating at {self.stoplossUpdatePrice}, sell qty is {sell_quantity}')
+
+                    self.stoplossUpdateQty = round(
+                            self.stoplossUpdateQty, price_precision.quantity_precision[self.symbol])
+                    logger.info(f'stoploss updating at {self.stoplossUpdateQty}, sell qty is {sell_quantity}')
+                    logger.info(f'api request to create order with symbol {self.symbol} and side sell and type stop market and quantity {self.stoplossUpdateQty} and stopPrice {stop_loss_price} and recvWindow 60000 and reduceOnly True')
                     if current_index != len(exit_prices):
                         for i in range (10):
                             time.sleep(3)
                             try:
-                                logger.info(f'api request to create order with symbol {self.symbol} and side sell and type stop market and quantity {self.stoplossUpdatePrice} and stopPrice {stop_loss_price} and recvWindow 60000 and reduceOnly True')
                                 updated_stop_loss = self.client.futures_create_order(
                                     symbol=self.symbol,
                                     side='BUY',
                                     type='STOP_MARKET',
-                                    quantity=self.stoplossUpdatePrice,
+                                    quantity=self.stoplossUpdateQty,
                                     stopPrice=stop_loss_price,
                                     recvWindow=60000,
                                     reduceOnly=True,
@@ -691,11 +693,11 @@ class Binance():
                                 collections.update_one(
                                     {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
                                 alert_bot.send_message(
-                                    self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                    self.user, f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdateQty} {self.symbol} at {stop_loss_price}.')
                                 logger.info(
-                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdateQty} {self.symbol} at {stop_loss_price}.')
                                 print(
-                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdatePrice} {self.symbol} at {stop_loss_price}.')
+                                    f'STOP LOSS ORDER UPDATED FOR {self.stoplossUpdateQty} {self.symbol} at {stop_loss_price}.')
                                 break
                             except Exception as e:
                                 logger.error("UNABLE TO PLACE STOPP LOSS ORDER")
@@ -773,7 +775,8 @@ class Binance():
                 f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
             print(
                 f'ATTEMPTING TO SELL {quantity} {self.symbol} at {current_price}')
-            
+        
+            logger.info(f'api request to create order with symbol {self.symbol} and side sell and type market and quantity {quantity} and recvWindow 60000')
             order = self.client.futures_create_order(
                 symbol=self.symbol,
                 side='SELL',
@@ -810,12 +813,13 @@ class Binance():
                 time_start = time.time()
 
                 logger.info(
-                    f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
+                    f'ATTEMPTING TO PLACE STOP LOSS ORDER where in api,  qty={quantity} symbol={self.symbol} at stoplosprice={stop_loss_price}')
                 print(
                     f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
                 for _ in range(10):
                     try:
                         print(f"Trying to place stop loss order with {quantity} {self.symbol} at {stop_loss_price} ")
+                        # logger.info(f"Trying to place stop loss order wit {quantity} {self.symbol} at {stop_loss_price} ")
                         stop_loss_order = self.client.futures_create_order(
                             symbol=self.symbol,
                             side='BUY',
@@ -876,7 +880,7 @@ class Binance():
             print("FAILED TO PLACE AN ORDER")
             print(f'ERROR INDENTIFIED : {e}')
             return
-        self.stoplossUpdatePrice=quantity.__round__(2)
+        self.stoplossUpdateQty=quantity.__round__(2)
 
         for i in range(3):
             try:

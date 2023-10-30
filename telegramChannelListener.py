@@ -11,6 +11,8 @@ import telebot  # pip install pyTelegramBotAPI
 from timer import start_timer, end_timer
 from symbols import cryptocurrencies
 import re
+import price_socket
+import position_socket
 import threading
 from pyrogram import Client as pyroClient, filters
 from getCandle import monitorPriceBuy, monitorPriceSell
