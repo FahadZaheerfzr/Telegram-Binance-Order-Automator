@@ -6,13 +6,14 @@ from configparser import ConfigParser
 from data import Data, PositionData
 from utils import setup_logger
 import createTestOrder
-import price_socket
-import position_socket
 from connection import DB
 import telebot  # pip install pyTelegramBotAPI
 from timer import start_timer, end_timer
 from symbols import cryptocurrencies
 import re
+import price_socket
+import position_socket
+import threading
 from pyrogram import Client as pyroClient, filters
 from getCandle import monitorPriceBuy, monitorPriceSell
 logger = setup_logger("telegram-listener")
@@ -67,7 +68,7 @@ def keep_alive():
         try:
             binance_client.futures_account_balance()
         except Exception as e:
-            logger.error(f'Invalid Order just to keep binance Alive')
+            logger.error(f'Invalid Order just to keep binance Alive {e}')
             print(e)
         time.sleep(60)
 
@@ -163,6 +164,10 @@ async def newMessageListener(client, message):
             newMessage = message.caption if message.media and message.caption else message.text
             newMessage = newMessage.lower()
             symbol = newMessage.split("#")[1].split(" ")[0].upper()
+            # remove anything after \n
+            symbol = symbol.split("\n")[0]
+            logger.info(f'Got symbol : {symbol}')
+            
         except Exception as e:
             print(e, "error in getting symbol")
             logger.error(f'Error in getting symbol : {e}')
@@ -172,7 +177,7 @@ async def newMessageListener(client, message):
         current_time_minutes = time.time() / 60
         last_processed_time = Data.get_last_processed_time(symbol + "USDT")
         cooldown_minutes = int(CoolDownTime)
-
+        print(last_processed_time,"last proc")
         if last_processed_time > 0 and current_time_minutes - last_processed_time < cooldown_minutes:
             logger.info(f'Cooldown active for {symbol}, time remaining: {round((current_time_minutes - last_processed_time) - cooldown_minutes, 2)} minutes')
             print(f'Cooldown active for {symbol}, time remaining: {round((current_time_minutes - last_processed_time) - cooldown_minutes, 2)} minutes')
@@ -199,7 +204,9 @@ async def newMessageListener(client, message):
             if CounterTradeTicker:
                 currentTime = time.time()
                 logger.info(f'CounterTradeTicker is True buy')
-                monitorPriceBuy(symbol, currentTime,sell)
+                # Run the function in a separate thread
+                buy_thread = threading.Thread(target=monitorPriceBuy, args=(symbol, currentTime, sell))
+                buy_thread.start()
             else:
                 buy(symbol)
         # logic for selling
@@ -208,7 +215,10 @@ async def newMessageListener(client, message):
             if CounterTradeTicker:
                 currentTime = time.time()
                 logger.info(f'CounterTradeTicker is True sell')
-                monitorPriceSell(symbol, currentTime,buy)
+                # Run the function in a separate thread
+                sell_thread = threading.Thread(target=monitorPriceSell, args=(symbol, currentTime, buy))
+                sell_thread.start()
+
             else:
                 sell(symbol)
         #here, lets say you added search for longlong in buyPattern and shortshort in sellPattern
