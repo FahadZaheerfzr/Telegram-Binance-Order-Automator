@@ -1,7 +1,7 @@
 import json
 import threading
 from symbols import cryptocurrencies
-from data import PriceData
+from data import PriceData,Data
 from utils import setup_logger
 from configparser import ConfigParser
 from price_precision import price_precision
@@ -9,6 +9,7 @@ from binance.client import Client
 from binance.um_futures import UMFutures
 import time
 from utils import setup_logger
+
 
 
 config = ConfigParser()
@@ -63,6 +64,8 @@ def getCandle(symbol):
         return
 # function to monitor price and send alert
 def monitorPriceBuy(symbol,currentTime,sell):
+    data = Data()
+    data.update_last_processed_time(symbol+"USDT")
     # get candle data
     try:
         candle = float(getCandle(symbol+"USDT"))
@@ -95,6 +98,8 @@ def monitorPriceBuy(symbol,currentTime,sell):
         return
 
 def monitorPriceSell(symbol,currentTime,buy):
+    data = Data()
+    data.update_last_processed_time(symbol+"USDT")
     # get candle data
     try:
         candle = float(getCandle(symbol+"USDT"))
