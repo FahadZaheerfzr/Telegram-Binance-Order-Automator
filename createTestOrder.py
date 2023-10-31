@@ -246,6 +246,7 @@ class Binance():
                                 symbol=self.symbol,
                                 side='SELL',
                                 type='MARKET',
+                                reduceOnly=True,
                                 quantity=float(positions['positionAmt']),
                                 recvWindow=60000
                             )
@@ -635,6 +636,7 @@ class Binance():
                                 side='BUY',
                                 type='MARKET',
                                 quantity=sell_quantity,
+                                reduceOnly=True,
                                 recvWindow=60000
                             )
                             current_index += 1
