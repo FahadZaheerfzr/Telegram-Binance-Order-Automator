@@ -68,8 +68,8 @@ def keep_alive():
         try:
             binance_client.futures_account_balance()
         except Exception as e:
-            logger.error(f'Invalid Order just to keep binance Alive {e}')
-            print(e)
+            logger.error(f'Error calling binance {e}')
+            print(f'Error calling binance {e}')
         time.sleep(60)
 
 
@@ -236,5 +236,8 @@ async def newMessageListener(client, message):
 
 # with client:
 #     client.run_until_disconnected()
-
-app.run()
+try:
+    app.run()
+except Exception as e:
+    logger.error(f'Error in app.run : {e}')
+    print(f'Error in app.run : {e}')

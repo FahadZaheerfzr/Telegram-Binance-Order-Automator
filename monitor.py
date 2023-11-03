@@ -15,9 +15,7 @@ def run_script():
         # Wait for the script to finish
         script_process.wait()
         print(script_process.returncode)
-        # If the script exited normally (return code 0), break the loop
-        
-        
+                
         # Log the error
         stderr = script_process.stderr
         if stderr is not None:

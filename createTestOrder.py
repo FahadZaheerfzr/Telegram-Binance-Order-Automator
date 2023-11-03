@@ -166,7 +166,7 @@ class Binance():
                     lastpnl=  lastpnl
                     logger.info(f'when exit then lastpnl remains {lastpnl}')
 
-                    for _ in range(3):
+                    for y in range(3):
                         try:
                             alert_bot.send_message(
                                 self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
@@ -193,7 +193,7 @@ class Binance():
                     pnl = float(pnlNew["realizedPnl"])
                     logger.info(f'pnl from api is {pnl} we add it to lastpnl {lastpnl}')
                     lastpnl= pnl + lastpnl
-                    for _ in range(3):
+                    for y in range(3):
                         try:
                             alert_bot.send_message(
                                 self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
@@ -207,7 +207,7 @@ class Binance():
                     logger.info(
                         f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
                     print(f'POSITION {self.symbol} CLOSED BY STOP LOSS ORDER')
-                    for _ in range(3):
+                    for y in range(3):
                         try:
                             alert_bot.send_message(
                                 self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
@@ -342,9 +342,9 @@ class Binance():
                         symbol=self.symbol, recvWindow=60000)
                     # logger.info(f'we got trades from api {trades}')
                     pnl = 0
-                    for i in range(current_index):
-                            logger.info(f'we got trades from api {trades[-1-i]} we get the last one and add it to pnl according to index={i}')
-                            pnlNew = trades[-1-i]
+                    for pnl_index in range(current_index):
+                            logger.info(f'we got trades from api {trades[-1-pnl_index]} we get the last one and add it to pnl according to index={pnl_index}')
+                            pnlNew = trades[-1-pnl_index]
                             pnl = float(pnlNew["realizedPnl"]) + pnl
                             logger.info(f'pnl is {pnl}')
                     # if last index dont send message
@@ -427,7 +427,7 @@ class Binance():
                 print(
                     f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
                 time_start = time.time()
-                for _ in range(10):
+                for y in range(10):
                     try:
                         print(f"Trying to place stop loss order with {quantity} {self.symbol} at {stop_loss_price} ")
                         logger.info(f"Trying to place stop loss order with  api {quantity} {self.symbol} at {stop_loss_price} ")
@@ -818,7 +818,7 @@ class Binance():
                     f'ATTEMPTING TO PLACE STOP LOSS ORDER where in api,  qty={quantity} symbol={self.symbol} at stoplosprice={stop_loss_price}')
                 print(
                     f'ATTEMPTING TO PLACE STOP LOSS ORDER FOR {quantity} {self.symbol} at {stop_loss_price}')
-                for _ in range(10):
+                for y in range(10):
                     try:
                         print(f"Trying to place stop loss order with {quantity} {self.symbol} at {stop_loss_price} ")
                         # logger.info(f"Trying to place stop loss order wit {quantity} {self.symbol} at {stop_loss_price} ")
