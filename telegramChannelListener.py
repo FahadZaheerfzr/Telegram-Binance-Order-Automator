@@ -1,5 +1,5 @@
 import time
-#from telethon import TelegramClient, events
+from telethon import TelegramClient, events
 from binance.client import Client
 import threading
 from configparser import ConfigParser
@@ -14,7 +14,7 @@ import re
 import price_socket
 import position_socket
 import threading
-from pyrogram import Client as pyroClient, filters
+# from pyrogram import Client as pyroClient, filters
 from getCandle import monitorPriceBuy, monitorPriceSell
 logger = setup_logger("telegram-listener")
 
@@ -79,8 +79,8 @@ ping_binance.start()
 
 print(excluded_symbols)
 
-#client = TelegramClient(username, api_key, api_secret)
-app = pyroClient(username, api_key, api_secret)
+client = TelegramClient(username, api_key, api_secret)
+#app = pyroClient(username, api_key, api_secret)
 
 
 def sell(symbol):
@@ -147,21 +147,24 @@ scalpPattern = r'\bscalp\b'
 swingPattern = r'\bswing\b'
 # in this if you want to add more key words, lets say longlong for buy,
 # you can add it like this : longlongPattern = r'\bbuy\b|\blonglong\b'
-#and if for example you want to add more keywords for sell, lets say shortshort for sell,
+# and if for example you want to add more keywords for sell, lets say shortshort for sell,
 # you can add it like this : shortshortPattern = r'\bsell\b|\bshortshort\b'
 #then go to line 167 and see the comment there
 
 
-@app.on_message(filters.chat(user_input_channel))
-async def newMessageListener(client, message):
+@client.on(events.NewMessage(chats = [user_input_channel]))
+async def newMessageListener(event):
+    print(event)
     try:
-        logger.info(f'Time sent to telegram : {message.date}')
-        print(f'Time sent to telegram : {message.date}')
-        content = message.caption if message.media and message.caption else message.text
-        logger.info(f'Received new message : {content}')
-        print(f'Received new message : {content}')
+        logger.info(f'Time sent to telegram : {event.message.date}')
+        print(f'Time sent to telegram : {event.message.date}')
+        #content = message.caption if message.media and message.caption else message.text
+        logger.info(f'Received new message : {event.message.date}')
+        print(f'Received new message : {event.message.date}')
         try:
-            newMessage = message.caption if message.media and message.caption else message.text
+            # Pyrogram newMessage = message.caption if message.media and message.caption else message.text
+            
+            newMessage = event.message
             newMessage = newMessage.lower()
             symbol = newMessage.split("#")[1].split(" ")[0].upper()
             # remove anything after \n
@@ -234,10 +237,10 @@ async def newMessageListener(client, message):
         logger.error(f'Error in newMessageListener : {e}')
         print(f'Error in newMessageListener : {e}')
 
-# with client:
-#     client.run_until_disconnected()
-try:
-    app.run()
-except Exception as e:
-    logger.error(f'Error in app.run : {e}')
-    print(f'Error in app.run : {e}')
+with client:
+    client.run_until_disconnected()
+# try:
+#     app.run()
+# except Exception as e:
+#     logger.error(f'Error in app.run : {e}')
+#     print(f'Error in app.run : {e}')
