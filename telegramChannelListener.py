@@ -154,7 +154,6 @@ swingPattern = r'\bswing\b'
 
 @client.on(events.NewMessage(chats = [user_input_channel]))
 async def newMessageListener(event):
-    print(event)
     try:
         logger.info(f'Time sent to telegram : {event.message.date}')
         print(f'Time sent to telegram : {event.message.date}')
@@ -164,7 +163,7 @@ async def newMessageListener(event):
         try:
             # Pyrogram newMessage = message.caption if message.media and message.caption else message.text
             
-            newMessage = event.message
+            newMessage = event.message.message
             newMessage = newMessage.lower()
             symbol = newMessage.split("#")[1].split(" ")[0].upper()
             # remove anything after \n
