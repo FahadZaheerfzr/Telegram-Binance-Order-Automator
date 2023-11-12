@@ -158,8 +158,8 @@ async def newMessageListener(event):
         logger.info(f'Time sent to telegram : {event.message.date}')
         print(f'Time sent to telegram : {event.message.date}')
         #content = message.caption if message.media and message.caption else message.text
-        logger.info(f'Received new message : {event.message.date}')
-        print(f'Received new message : {event.message.date}')
+        logger.info(f'Received new message : {event.message.message}')
+        print(f'Received new message : {event.message.message}')
         try:
             # Pyrogram newMessage = message.caption if message.media and message.caption else message.text
             

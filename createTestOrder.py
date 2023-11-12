@@ -140,6 +140,7 @@ class Binance():
             logger.info('THREAD STARTED')
             print('THREAD STARTED')
             item = collections.find_one({"_id": item_id})
+            self.stoplossUpdateQty = item['stoplossUpdateQty']
             entry_price = item['entry_price']
             quantity = item['quantity']
             exit_prices = item['exit_points']
@@ -276,11 +277,11 @@ class Binance():
                         symbol=self.symbol, recvWindow=60000)
 
 
-
+                    self.stoplossUpdateQty -= sell_quantity
 
 
                     collections.update_one(
-                        {"_id": item_id}, {"$set": {"index": current_index}})
+                        {"_id": item_id}, {"$set": {"index": current_index, "stoplossUpdateQty": self.stoplossUpdateQty}})
 
                     if sell_order:
                         logger.info(f'EXIT POINT {current_index} ACHIEVED')
@@ -516,6 +517,7 @@ class Binance():
         # Insert the document into the collection
         item = collections.insert_one({
             'symbol': self.symbol[:-4],
+            'stoplossUpdateQty': quantity,
             'entry_price': entry_price,
             'quantity': quantity,
             'state': 'BUY',
@@ -539,6 +541,7 @@ class Binance():
             logger.info('THREAD STARTED')
             print('THREAD STARTED')
             item = collections.find_one({"_id": item_id})
+            self.stoplossUpdateQty = item['stoplossUpdateQty']
             entry_price = item['entry_price']
             quantity = item['quantity']
             exit_prices = item['exit_points']
@@ -650,9 +653,9 @@ class Binance():
 
                     cancel_order = self.client.futures_cancel_all_open_orders(
                         symbol=self.symbol, recvWindow=60000)
-
+                    self.stoplossUpdateQty -= sell_quantity
                     collections.update_one(
-                        {"_id": item_id}, {"$set": {"index": current_index}})
+                        {"_id": item_id}, {"$set": {"index": current_index, "stoplossUpdateQty": self.stoplossUpdateQty}})
 
                     if sell_order:
                         logger.info(f'EXIT POINT {current_index} ACHIEVED')
@@ -671,7 +674,9 @@ class Binance():
                             stop_loss_index += 1
                         else:
                             stop_loss_price = exit_prices[stop_loss_index-1]
+                    
 
+                    stop_loss_price = round(stop_loss_price, price_precision.price_precision[self.symbol])
                     logger.info(f'old stoploss {self.stoplossUpdateQty}')
                     # self.stoplossUpdatePrice=round(self.stoplossUpdatePrice - float(sell_quantity), price_precision.quantity_precision[self.symbol])
 
@@ -908,6 +913,7 @@ class Binance():
 
         item = collections.insert_one({
             'symbol': self.symbol[:-4],
+            'stoplossUpdateQty': quantity,
             'entry_price': entry_price,
             'quantity': quantity,
             'state': 'SELL',
