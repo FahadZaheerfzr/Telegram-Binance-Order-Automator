@@ -39,6 +39,8 @@ class Binance():
         self.price_data = PriceData()
         self.position_data = PositionData()
         self.stoplossUpdateQty = 0
+        self.orderIds = []
+
         try:
             # reading config file
             self.configur = ConfigParser()
@@ -159,18 +161,25 @@ class Binance():
                 # positions = PositionData.position_data
 
                 if current_index == len(exit_prices):
-                    # trades = self.client.futures_account_trades(
-                    #     symbol=self.symbol, recvWindow=60000)
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
+                    # acc to current index we will sum up the pnl in trades from the end of trades
+                    # we will check order id in trades and if it is in order id list then we will add it to pnl
 
-                    # pnlNew = trades[-1]
-                    # pnl = float(pnlNew["realizedPnl"])
-                    lastpnl=  lastpnl
-                    logger.info(f'when exit then lastpnl remains {lastpnl}')
+
+                    pnl = 0
+                    for i in range(len(trades)):
+                        if trades[i]['orderId'] in self.orderIds:
+                            logger.info(f'found order id : {trades[i]["orderId"]}')
+
+                            pnlNew = trades[i]
+                            pnl = float(pnlNew["realizedPnl"]) + pnl
+                    logger.info(f'when exit then lastpnl remains {pnl}')
 
                     for y in range(3):
                         try:
                             alert_bot.send_message(
-                                self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                                self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
                             break
                         except Exception as e:
                             logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
@@ -190,14 +199,17 @@ class Binance():
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
 
-                    pnlNew = trades[-1]
-                    pnl = float(pnlNew["realizedPnl"])
-                    logger.info(f'pnl from api is {pnl} we add it to lastpnl {lastpnl}')
-                    lastpnl= pnl + lastpnl
+                    pnl = 0
+                    for i in range(len(trades)):
+                        if trades[i]['orderId'] in self.orderIds:
+                            logger.info(f'found order id : {trades[i]["orderId"]}')
+
+                            pnlNew = trades[i]
+                            pnl = float(pnlNew["realizedPnl"]) + pnl
                     for y in range(3):
                         try:
                             alert_bot.send_message(
-                                self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                                self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
                             break
                         except Exception as e:
                             logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
@@ -341,19 +353,17 @@ class Binance():
                     logger.info(f'getting trades from api with symbol {self.symbol} and recvWindow 60000')
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
-                    # logger.info(f'we got trades from api {trades}')
                     pnl = 0
-                    for pnl_index in range(current_index):
-                            logger.info(f'we got trades from api {trades[-1-pnl_index]} we get the last one and add it to pnl according to index={pnl_index}')
-                            pnlNew = trades[-1-pnl_index]
+                    for i in range(len(trades)):
+                        logger.info(f'order ids : {self.orderIds}')
+                        if trades[i]['orderId'] in self.orderIds:
+                            logger.info(f'found order id : {trades[i]["orderId"]}')
+                            pnlNew = trades[i]
                             pnl = float(pnlNew["realizedPnl"]) + pnl
-                            logger.info(f'pnl is {pnl}')
-                    # if last index dont send message
-                    if current_index != len(exit_prices):
-                        alert_bot.send_message(
-                            self.user, f'CURRENT PNL : {pnl}')
+                    alert_bot.send_message(
+                        self.user, f'CURRENT PNL : {pnl}')
 
-                    lastpnl = pnl
+                    # lastpnl = pnl
         except Exception as e:
             logger.error('FAILED TO MONITOR PRICE')
             print("FAILED TO MONITOR PRICE")
@@ -398,6 +408,8 @@ class Binance():
             logger.info(
                 f'ORDER PLACED : {order["orderId"]} at {current_price}')
             print(f'ORDER PLACED : {order["orderId"]} at {current_price}')
+            self.orderIds.append(order["orderId"])
+
             time_end = end_timer()
 
             
@@ -557,15 +569,17 @@ class Binance():
                     self.symbol)]  # get position data from position_data.py
 
                 if current_index == len(exit_prices):
-                    # trades = self.client.futures_account_trades(
-                    #     symbol=self.symbol, recvWindow=60000)
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
 
-                    # pnlNew = trades[-1]
-                    # pnl = float(pnlNew["realizedPnl"])
-                    lastpnl=  lastpnl
-                    logger.info(f'when exit then lastpnl remains {lastpnl}')
+                    pnl = 0
+                    for i in range(len(trades)):
+                        if trades[i]['orderId'] in self.orderIds:
+                            pnlNew = trades[i]
+                            pnl = float(pnlNew["realizedPnl"]) + pnl 
+                    logger.info(f'when exit then lastpnl remains {pnl}')
                     alert_bot.send_message(
-                        self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                        self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
 
                     logger.info(f'ALL EXIT POINTS ACHIEVED')
                     print('ALL EXIT POINTS ACHIEVED')
@@ -585,15 +599,14 @@ class Binance():
                         self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
-
-                    pnlNew = trades[-1]
-
-                    pnl = float(pnlNew["realizedPnl"]) 
-                    logger.info(f'pnl from api is {pnl} we add it to lastpnl {lastpnl}')
-                    lastpnl= pnl + lastpnl
+                    pnl = 0
+                    for i in range(len(trades)):
+                        if trades[i]['orderId'] in self.orderIds:
+                            pnlNew = trades[i]
+                            pnl = float(pnlNew["realizedPnl"]) + pnl   
 
                     alert_bot.send_message(
-                        self.user, f'POSITION CLOSED. FINAL PNL : {lastpnl}')
+                        self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
                     self.data.remove(self.symbol)
                     collections.delete_one({"_id": item_id})
                     cancel_order = self.client.futures_cancel_all_open_orders(
@@ -714,21 +727,13 @@ class Binance():
                     logger.info(f'getting trades from api with symbol {self.symbol} and recvWindow 60000')
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
-                    # logger.info(f'we got trades from api {trades}')
                     pnl = 0
-                    for i in range(current_index):
-                            logger.info(f'we got trades from api {trades[-1-i]} we get the last one and add it to pnl according to index={i}')
-                            pnlNew = trades[-1-i]
-
-                            pnl = float(pnlNew["realizedPnl"]) + pnl
-                            logger.info(f'pnl is {pnl}')
-
-                    # if last index dont send message
-                    if current_index != len(exit_prices):
-                        alert_bot.send_message(
-                            self.user, f'CURRENT PNL : {pnl}')
-                    
-                    lastpnl = pnl
+                    for i in range(len(trades)):
+                        if trades[i]['orderId'] in self.orderIds:
+                            pnlNew = trades[i]
+                            pnl = float(pnlNew["realizedPnl"]) + pnl   
+                    alert_bot.send_message(
+                        self.user, f'CURRENT PNL : {pnl}')
                 # elif current_price <= stop_loss_price:
                 #     logger.info(f'STOP LOSS ACHIEVED')
                 #     # sell all if stop_loss_price is acheived
@@ -791,6 +796,7 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,
             )
+            self.orderIds.append(order["orderId"])
 
 
             # if CounterTradeTicker:
