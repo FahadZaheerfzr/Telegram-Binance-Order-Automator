@@ -161,32 +161,6 @@ class Binance():
                 # positions = PositionData.position_data
 
                 if current_index == len(exit_prices):
-                    trades = self.client.futures_account_trades(
-                        symbol=self.symbol, recvWindow=60000)
-                    # acc to current index we will sum up the pnl in trades from the end of trades
-                    # we will check order id in trades and if it is in order id list then we will add it to pnl
-
-
-                    pnl = 0
-                    for i in range(len(trades)):
-                        if trades[i]['orderId'] in self.orderIds:
-                            logger.info(f'found order id : {trades[i]["orderId"]}')
-
-                            pnlNew = trades[i]
-                            pnl = float(pnlNew["realizedPnl"]) + pnl
-                    logger.info(f'when exit then lastpnl remains {pnl}')
-
-                    for y in range(3):
-                        try:
-                            alert_bot.send_message(
-                                self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
-                            break
-                        except Exception as e:
-                            logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
-                            logger.error(f'ERROR INDENTIFIED : {e}')
-                            print("FAILED TO SEND TELEGRAM MESSAGE")
-                            print(f'ERROR INDENTIFIED : {e}')
-                            time.sleep(10)
                     logger.info(f'ALL EXIT POINTS ACHIEVED')
                     print('ALL EXIT POINTS ACHIEVED')
                     self.data.remove(self.symbol)
@@ -198,7 +172,7 @@ class Binance():
                 if positionClosed == True:
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
-
+                    print(trades)
                     pnl = 0
                     for i in range(len(trades)):
                         if trades[i]['orderId'] in self.orderIds:
@@ -287,6 +261,26 @@ class Binance():
 
                     cancel_order = self.client.futures_cancel_all_open_orders(
                         symbol=self.symbol, recvWindow=60000)
+                    
+                    trades = self.client.futures_account_trades(
+                        symbol=self.symbol, recvWindow=60000)
+                    # acc to current index we will sum up the pnl in trades from the end of trades
+                    # we will check order id in trades and if it is in order id list then we will add it to pnl
+                    pnlTrade = trades[-1]
+                    pnl = float(pnlTrade["realizedPnl"]) 
+                    logger.info(f'when exit then lastpnl remains {pnl}')
+                    
+                    for y in range(3):
+                        try:
+                            alert_bot.send_message(
+                                self.user, f'PNL for this order : {pnl}')
+                            break
+                        except Exception as e:
+                            logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                            logger.error(f'ERROR INDENTIFIED : {e}')
+                            print("FAILED TO SEND TELEGRAM MESSAGE")
+                            print(f'ERROR INDENTIFIED : {e}')
+                            time.sleep(10)
 
 
                     self.stoplossUpdateQty -= sell_quantity
@@ -334,6 +328,7 @@ class Binance():
                                     recvWindow=60000,
                                     reduceOnly=True,
                                 )
+                                self.orderIds.append(updated_stop_loss["orderId"])
                                 collections.update_one(
                                     {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
                                 alert_bot.send_message(
@@ -408,7 +403,6 @@ class Binance():
             logger.info(
                 f'ORDER PLACED : {order["orderId"]} at {current_price}')
             print(f'ORDER PLACED : {order["orderId"]} at {current_price}')
-            self.orderIds.append(order["orderId"])
 
             time_end = end_timer()
 
@@ -475,7 +469,8 @@ class Binance():
                     f'STOP LOSS ORDER PLACED : {stop_loss_order["orderId"]} at {stop_loss_price}')
                 print(
                     f'STOP LOSS ORDER PLACED : {stop_loss_order["orderId"]} at {stop_loss_price}')
-
+                
+                self.orderIds.append(stop_loss_order["orderId"])
                 # getting trade data ready
                 exit_points = self.configur.getint(
                     'Binance', 'NUMBER_OF_EXIT_POINTS')
@@ -569,18 +564,6 @@ class Binance():
                     self.symbol)]  # get position data from position_data.py
 
                 if current_index == len(exit_prices):
-                    trades = self.client.futures_account_trades(
-                        symbol=self.symbol, recvWindow=60000)
-
-                    pnl = 0
-                    for i in range(len(trades)):
-                        if trades[i]['orderId'] in self.orderIds:
-                            pnlNew = trades[i]
-                            pnl = float(pnlNew["realizedPnl"]) + pnl 
-                    logger.info(f'when exit then lastpnl remains {pnl}')
-                    alert_bot.send_message(
-                        self.user, f'POSITION CLOSED. FINAL PNL : {pnl}')
-
                     logger.info(f'ALL EXIT POINTS ACHIEVED')
                     print('ALL EXIT POINTS ACHIEVED')
                     self.data.remove(self.symbol)
@@ -590,8 +573,6 @@ class Binance():
                     sys.exit()
 
                 if positionClosed == True:
-
-
                     logger.info(
                         f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                     print(f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
@@ -599,6 +580,7 @@ class Binance():
                         self.user, f'POSITION ${self.symbol} CLOSED BY STOP LOSS ORDER')
                     trades = self.client.futures_account_trades(
                         symbol=self.symbol, recvWindow=60000)
+                    print(trades)
                     pnl = 0
                     for i in range(len(trades)):
                         if trades[i]['orderId'] in self.orderIds:
@@ -645,6 +627,26 @@ class Binance():
                             current_index += 1
                             cancel_order = self.client.futures_cancel_all_open_orders(
                                 symbol=self.symbol, recvWindow=60000)
+                            
+                            trades = self.client.futures_account_trades(
+                                symbol=self.symbol, recvWindow=60000)
+                            # acc to current index we will sum up the pnl in trades from the end of trades
+                            # we will check order id in trades and if it is in order id list then we will add it to pnl
+                            pnlTrade = trades[-1]
+                            pnl = float(pnlTrade["realizedPnl"]) 
+                            logger.info(f'when exit then lastpnl remains {pnl}')
+                            
+                            for y in range(3):
+                                try:
+                                    alert_bot.send_message(
+                                        self.user, f'PNL for this order : {pnl}')
+                                    break
+                                except Exception as e:
+                                    logger.error(f'FAILED TO SEND TELEGRAM MESSAGE')
+                                    logger.error(f'ERROR INDENTIFIED : {e}')
+                                    print("FAILED TO SEND TELEGRAM MESSAGE")
+                                    print(f'ERROR INDENTIFIED : {e}')
+                                    time.sleep(10)
                         else:
                             logger.info(f'api request to create order with symbol {self.symbol} and side buy and type market and quantity {sell_quantity} and recvWindow 60000')
                             sell_order = self.client.futures_create_order(
@@ -710,6 +712,7 @@ class Binance():
                                     recvWindow=60000,
                                     reduceOnly=True,
                                 )
+                                self.orderIds.append(updated_stop_loss["orderId"])
                                 collections.update_one(
                                     {"_id": item_id}, {"$set": {"stop_loss": stop_loss_price}})
                                 alert_bot.send_message(
@@ -725,15 +728,7 @@ class Binance():
                                 print("UNABLE TO PLACE STOPP LOSS ORDER")
                                 print(e)
                     logger.info(f'getting trades from api with symbol {self.symbol} and recvWindow 60000')
-                    trades = self.client.futures_account_trades(
-                        symbol=self.symbol, recvWindow=60000)
-                    pnl = 0
-                    for i in range(len(trades)):
-                        if trades[i]['orderId'] in self.orderIds:
-                            pnlNew = trades[i]
-                            pnl = float(pnlNew["realizedPnl"]) + pnl   
-                    alert_bot.send_message(
-                        self.user, f'CURRENT PNL : {pnl}')
+                    
                 # elif current_price <= stop_loss_price:
                 #     logger.info(f'STOP LOSS ACHIEVED')
                 #     # sell all if stop_loss_price is acheived
@@ -796,7 +791,6 @@ class Binance():
                 quantity=quantity,
                 recvWindow=60000,
             )
-            self.orderIds.append(order["orderId"])
 
 
             # if CounterTradeTicker:
@@ -865,6 +859,8 @@ class Binance():
                     f'STOP LOSS ORDER PLACED : {stop_loss_order["orderId"]} at {stop_loss_price}')
                 print(
                     f'STOP LOSS ORDER PLACED : {stop_loss_order["orderId"]} at {stop_loss_price}')
+                
+                self.orderIds.append(stop_loss_order["orderId"])
 
                 # getting trade data ready
                 exit_points = self.configur.getint(
